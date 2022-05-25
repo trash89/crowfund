@@ -2,5 +2,22 @@ __pycache__
 .env
 .history
 .hypothesis/
+.vscode/
 build/
 reports/
+
+client/node_modules
+node_modules
+.env
+coverage
+coverage.json
+package-lock.json
+client/package-lock.json
+typechain
+
+#Hardhat files
+cache
+artifacts
+
+# Local Netlify folder
+.netlify

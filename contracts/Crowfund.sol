@@ -1,16 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "./console.sol";
 
-contract CrowdToken is ERC20 {
-    constructor(uint256 initialSupply) ERC20("Crowd", "CRW") {
-        _mint(msg.sender, initialSupply);
-    }
-}
-
-contract CrowdFund {
+contract Crowfund {
     event Launch(
         uint256 id,
         address indexed creator,
