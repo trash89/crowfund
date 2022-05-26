@@ -17,10 +17,16 @@ networks:
   default: development
   kovan:
     verify: False
+    numConfirmations: 1
   rinkeby:
     verify: False
+    numConfirmations: 1
   hh-local:
     verify: False
+    numConfirmations: 1
+  hardhat:
+    verify: False
+    numConfirmations: 1
 dotenv: .env
 wallets:
   from_key: ${PRIVATE_KEY}

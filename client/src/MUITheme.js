@@ -2,16 +2,13 @@ export const themeOptions = {
   palette: {
     type: "light",
     primary: {
-      main: "#353aa8",
+      main: "#3f51b5",
     },
     secondary: {
       main: "#f50057",
     },
-    background: {
-      paper: "#d0e0cc",
-      default: "#e0d8cf",
-    },
   },
+  spacing: 8,
   overrides: {
     MuiButton: {
       root: {
@@ -73,5 +70,8 @@ export const themeOptions = {
       margin: "dense",
       size: "small",
     },
+  },
+  shape: {
+    borderRadius: 4,
   },
 };

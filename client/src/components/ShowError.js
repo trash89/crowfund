@@ -1,12 +1,14 @@
 import Typography from "@mui/material/Typography";
 import { useState, useEffect } from "react";
-const ShowError = ({ flag, error }) => {
-  const [local, setLocal] = useState(error);
+const ShowError = ({ message, flag, error }) => {
+  const [localError, setLocalError] = useState(error);
+  const [localMessage, setLocalMessage] = useState(message);
 
   useEffect(() => {
     const timeoutID = window.setTimeout(() => {
-      setLocal("");
-    }, 5000);
+      setLocalError("");
+      setLocalMessage("");
+    }, 7000);
 
     return () => {
       window.clearTimeout(timeoutID);
@@ -17,7 +19,8 @@ const ShowError = ({ flag, error }) => {
     <>
       {flag ? (
         <Typography color="red">
-          {local?.reason ? local?.reason : local?.message}
+          {localMessage}
+          {localError?.reason ? localError?.reason : localError?.message}
         </Typography>
       ) : (
         <></>

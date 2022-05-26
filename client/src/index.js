@@ -14,9 +14,9 @@ import { createTheme, ThemeProvider } from "@mui/material/styles";
 import {
   apiProvider,
   configureChains,
-  getDefaultWallets,
-  //connectorsForWallets,
-  //wallet,
+  //getDefaultWallets,
+  connectorsForWallets,
+  wallet,
   RainbowKitProvider,
 } from "@rainbow-me/rainbowkit";
 import { createClient, chain, WagmiConfig } from "wagmi";
@@ -31,17 +31,17 @@ const { provider, chains } = configureChains(
   [apiProvider.alchemy(process.env.ALCHEMY_ID), apiProvider.fallback()]
 );
 
-const { connectors } = getDefaultWallets({
-  appName: "Crowfund Ethereum App, with Redux,Wagmi,Rainbowkit and Material-UI",
-  chains,
-});
+//const { connectors } = getDefaultWallets({
+//  appName: "Crowfund Ethereum App, with Redux,Wagmi,Rainbowkit and Material-UI",
+//  chains,
+//});
 
-// const connectors = connectorsForWallets([
-//   {
-//     groupName: "Recommended",
-//     wallets: [wallet.metaMask({ chains }), wallet.injected({ chains })],
-//   },
-// ]);
+const connectors = connectorsForWallets([
+  {
+    groupName: "Recommended",
+    wallets: [wallet.injected({ chains })],
+  },
+]);
 
 const wagmiClient = createClient({
   autoConnect: true,
