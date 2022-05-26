@@ -42,6 +42,7 @@ const CrowfundContainer = () => {
         <Stack
           direction="row"
           spacing={2}
+          padding={1}
           justifyContent="flex-start"
           alignItems="flex-start"
         >
