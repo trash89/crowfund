@@ -11,23 +11,23 @@ import {
   useWaitForTransaction,
 } from "wagmi";
 
-import { useIsMounted, useTokenDetails } from "../hooks";
 import {
   addressNotZero,
   shortenAddress,
   formatBalance,
   getNumConfirmations,
 } from "../utils/utils";
-
+import { useIsMounted, useTokenDetails } from "../hooks";
 import { GetStatusIcon, ShowError } from "../components";
 
 const CrowToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
   const isMounted = useIsMounted();
+  const numConfirmations = getNumConfirmations(activeChain);
+  const [disabled, setDisabled] = useState(false);
   const [inputAddress, setInputAddress] = useState("");
   const [transferFrom, setTransferFrom] = useState("");
   const [inputValue, setInputValue] = useState("0");
-  const [disabled, setDisabled] = useState(false);
-  const numConfirmations = getNumConfirmations(activeChain);
+
   // token details for display
   const {
     isOwner,
