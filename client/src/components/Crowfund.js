@@ -2,10 +2,7 @@ import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import { useBalance } from "wagmi";
 import { addressNotZero, shortenAddress, formatBalance } from "../utils/utils";
-import { useSelector, useDispatch } from "react-redux";
 import { useIsMounted } from "../hooks";
-import { Alert } from "../components";
-import { showAlert } from "../features/alert/alertSlice";
 
 const CrowFund = ({
   activeChain,
@@ -16,8 +13,6 @@ const CrowFund = ({
   account,
 }) => {
   const isMounted = useIsMounted();
-  const dispatch = useDispatch();
-  const { isAlert } = useSelector((store) => store.alert);
 
   const {
     data: balanceToken,
@@ -43,7 +38,6 @@ const CrowFund = ({
       <Typography variant="h6" gutterBottom component="div">
         Crowfund
       </Typography>
-      {isAlert && <Alert />}
       {account && isSuccessBalanceToken && (
         <Typography>
           Connected Account :{shortenAddress(account?.address)} (

@@ -6,8 +6,6 @@ import "./index.css";
 import App from "./App";
 import { themeOptions } from "./MUITheme";
 //import { ApolloClient, ApolloProvider, InMemoryCache } from "@apollo/client";
-import { store } from "./store";
-import { Provider } from "react-redux";
 
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 
@@ -32,7 +30,7 @@ const { provider, chains } = configureChains(
 );
 
 //const { connectors } = getDefaultWallets({
-//  appName: "Crowfund Ethereum App, with Redux,Wagmi,Rainbowkit and Material-UI",
+//  appName: "Crowfund Ethereum App, with Wagmi,Rainbowkit and Material-UI",
 //  chains,
 //});
 
@@ -62,9 +60,7 @@ ReactDOM.render(
       <RainbowKitProvider chains={chains}>
         {/* <ApolloProvider client={apolloClient}> */}
         <ThemeProvider theme={theme}>
-          <Provider store={store}>
-            <App />
-          </Provider>
+          <App />
         </ThemeProvider>
         {/* </ApolloProvider> */}
       </RainbowKitProvider>
