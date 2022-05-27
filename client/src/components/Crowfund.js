@@ -774,13 +774,13 @@ const CrowFund = ({
         </Typography>
         {account && isSuccessBalanceToken && (
           <Typography>
-            Connected Account {account?.address} (
-            {formatBalance(balanceToken?.value)} {balanceToken?.symbol}) (
-            {formatBalance(balanceAccount?.value)} {balanceAccount?.symbol})
+            Account {account?.address} ({formatBalance(balanceToken?.value)}{" "}
+            {balanceToken?.symbol}) ({formatBalance(balanceAccount?.value)}{" "}
+            {balanceAccount?.symbol})
           </Typography>
         )}
         <TableContainer component={Paper}>
-          <Table padding="checkbox" size="normal" aria-label="Campaigns">
+          <Table padding="checkbox" size="small" aria-label="Campaigns">
             <TableHead>
               <TableRow>
                 <TableCell align="center">#</TableCell>
