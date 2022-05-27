@@ -51,10 +51,10 @@ contract Crowfund {
         uint32 _startAt,
         uint32 _endAt
     ) external returns (uint256) {
-        console.log("Now is %d", block.timestamp);
+        console.log("_startAt is %d, Now is %d", _startAt,block.timestamp);
         require(_startAt >= block.timestamp, "start at < now");
         require(_endAt >= _startAt, "end at < start at");
-        require(_endAt <= block.timestamp + 2 minutes, "end at > max duration");
+        require(_endAt <= block.timestamp + 2 days, "end at > max duration");
 
         count += 1;
         campaigns[count] = Campaign({

@@ -10,8 +10,8 @@ def main():
     crowfund = deployCrowfund(crowtoken.address, update_front_end_flag=True)
     # alice launch a campaign
     goal = 100
-    startAt = chain.time()+15
-    endAt = startAt+20
+    startAt = chain.time()+10
+    endAt = startAt+20000
     campaignId = launchCampaign(crowfund, get_account(), goal, startAt, endAt)
     approve_tokens(get_account(), crowtoken, crowfund, 100)
     pledge_tokens(campaignId, 20, get_account(), crowfund)
@@ -19,7 +19,7 @@ def main():
     # bob launch a campaign
     goal = 150
     startAt = chain.time()+10
-    endAt = startAt+20
+    endAt = startAt+20000
     campaignId = launchCampaign(
         crowfund, get_account(index=1), goal, startAt, endAt)
     approve_tokens(get_account(index=1), crowtoken, crowfund, 50)
@@ -57,7 +57,7 @@ def deployCrowfund(token_address, update_front_end_flag=True):
 
 
 def launchCampaign(crowfund, who_launch, goal, startAt, endAt):
-    print(f"Alice launch a campaign with a goal of {goal} tokens")
+    print(f"launch a campaign with a goal of {goal} tokens")
     tx = crowfund.launch(goal, startAt, endAt, {
                          "from": who_launch})
     tx.wait(1)

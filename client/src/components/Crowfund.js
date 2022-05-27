@@ -12,6 +12,12 @@ import TableHead from "@mui/material/TableHead";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+
 import { BigNumber, utils, constants } from "ethers";
 import {
   useContractRead,
@@ -36,8 +42,15 @@ const GetCampaign = ({
   contractAddress,
   contractABI,
   account,
+  numConfirmations,
 }) => {
   const isMounted = useIsMounted();
+  const [value, setValue] = useState("0");
+  const [openPledge, setOpenPledge] = useState(false);
+  const [openUnpledge, setOpenUnpledge] = useState(false);
+  const [openClaim, setOpenClaim] = useState(false);
+  const [openRefund, setOpenRefund] = useState(false);
+  const [openCancel, setOpenCancel] = useState(false);
   const [disabled, setDisabled] = useState(false);
   const {
     data: campaign,
@@ -60,7 +73,7 @@ const GetCampaign = ({
     data: pledgedAmount,
     isLoading: isLoadingpledgedAmount,
     isSuccess: isSuccesspledgedAmount,
-    status: statusPledged,
+    status: statusPledgedAmount,
   } = useContractRead(
     {
       addressOrName: contractAddress,
@@ -73,6 +86,172 @@ const GetCampaign = ({
       watch: Boolean(activeChain && addressNotZero(contractAddress)),
     }
   );
+  // pledge function
+  const {
+    data: dataPledge,
+    error: errorPledge,
+    isError: isErrorPledge,
+    isLoading: isLoadingPledge,
+    write: writePledge,
+    status: statusPledge,
+  } = useContractWrite(
+    {
+      addressOrName: contractAddress,
+      contractInterface: contractABI,
+    },
+    "pledge",
+    {
+      enabled: Boolean(
+        activeChain && account && addressNotZero(contractAddress)
+      ),
+    }
+  );
+  const { status: statusPledgeWait } = useWaitForTransaction({
+    hash: dataPledge?.hash,
+    wait: dataPledge?.wait,
+    confirmations: numConfirmations,
+    enabled: Boolean(activeChain && account && addressNotZero(contractAddress)),
+  });
+
+  // unpledge function
+  const {
+    data: dataUnpledge,
+    error: errorUnpledge,
+    isError: isErrorUnpledge,
+    isLoading: isLoadingUnpledge,
+    write: writeUnpledge,
+    status: statusUnpledge,
+  } = useContractWrite(
+    {
+      addressOrName: contractAddress,
+      contractInterface: contractABI,
+    },
+    "unpledge",
+    {
+      enabled: Boolean(
+        activeChain && account && addressNotZero(contractAddress)
+      ),
+    }
+  );
+  const { status: statusUnpledgeWait } = useWaitForTransaction({
+    hash: dataUnpledge?.hash,
+    wait: dataUnpledge?.wait,
+    confirmations: numConfirmations,
+    enabled: Boolean(activeChain && account && addressNotZero(contractAddress)),
+  });
+
+  // claim function
+  const {
+    data: dataClaim,
+    error: errorClaim,
+    isError: isErrorClaim,
+    isLoading: isLoadingClaim,
+    write: writeClaim,
+    status: statusClaim,
+  } = useContractWrite(
+    {
+      addressOrName: contractAddress,
+      contractInterface: contractABI,
+    },
+    "claim",
+    {
+      enabled: Boolean(
+        activeChain && account && addressNotZero(contractAddress)
+      ),
+    }
+  );
+  const { status: statusClaimWait } = useWaitForTransaction({
+    hash: dataClaim?.hash,
+    wait: dataClaim?.wait,
+    confirmations: numConfirmations,
+    enabled: Boolean(activeChain && account && addressNotZero(contractAddress)),
+  });
+
+  // refund function
+  const {
+    data: dataRefund,
+    error: errorRefund,
+    isError: isErrorRefund,
+    isLoading: isLoadingRefund,
+    write: writeRefund,
+    status: statusRefund,
+  } = useContractWrite(
+    {
+      addressOrName: contractAddress,
+      contractInterface: contractABI,
+    },
+    "refund",
+    {
+      enabled: Boolean(
+        activeChain && account && addressNotZero(contractAddress)
+      ),
+    }
+  );
+  const { status: statusRefundWait } = useWaitForTransaction({
+    hash: dataRefund?.hash,
+    wait: dataRefund?.wait,
+    confirmations: numConfirmations,
+    enabled: Boolean(activeChain && account && addressNotZero(contractAddress)),
+  });
+
+  // cancel function
+  const {
+    data: dataCancel,
+    error: errorCancel,
+    isError: isErrorCancel,
+    isLoading: isLoadingCancel,
+    write: writeCancel,
+    status: statusCancel,
+  } = useContractWrite(
+    {
+      addressOrName: contractAddress,
+      contractInterface: contractABI,
+    },
+    "cancel",
+    {
+      enabled: Boolean(
+        activeChain && account && addressNotZero(contractAddress)
+      ),
+    }
+  );
+  const { status: statusCancelWait } = useWaitForTransaction({
+    hash: dataCancel?.hash,
+    wait: dataCancel?.wait,
+    confirmations: numConfirmations,
+    enabled: Boolean(activeChain && account && addressNotZero(contractAddress)),
+  });
+
+  // useEffect to setup values
+  useEffect(() => {
+    if (
+      statusPledge !== "loading" &&
+      statusPledgeWait !== "loading" &&
+      statusUnpledge !== "loading" &&
+      statusUnpledgeWait !== "loading" &&
+      statusClaim !== "loading" &&
+      statusClaimWait !== "loading" &&
+      statusRefund !== "loading" &&
+      statusRefundWait !== "loading" &&
+      statusCancel !== "loading" &&
+      statusCancelWait !== "loading"
+    ) {
+      if (value) setValue("0");
+      setDisabled(false);
+    }
+    // eslint-disable-next-line
+  }, [
+    statusPledge,
+    statusPledgeWait,
+    statusUnpledge,
+    statusUnpledgeWait,
+    statusClaim,
+    statusClaimWait,
+    statusRefund,
+    statusRefundWait,
+    statusCancel,
+    statusCancelWait,
+  ]);
+
   if (
     !isMounted ||
     isLoadingCampaign ||
@@ -81,97 +260,428 @@ const GetCampaign = ({
     !isSuccesspledgedAmount
   )
     return <></>;
+
+  const handleClosePledge = (event, reason) => {
+    if (
+      (reason && (reason === "backdropClick" || reason === "escapeKeyDown")) ||
+      event.currentTarget.value === "cancel"
+    ) {
+      if (value) setValue("0");
+      setOpenPledge(false);
+    } else {
+      if (parseInt(event.currentTarget.value) >= 0) {
+        setDisabled(true);
+        writePledge({
+          args: [parseInt(event.currentTarget.value), utils.parseEther(value)],
+        });
+        setOpenPledge(false);
+        if (value) setValue("0");
+      }
+    }
+  };
+  const handleCloseUnpledge = (event, reason) => {
+    if (
+      (reason && (reason === "backdropClick" || reason === "escapeKeyDown")) ||
+      event.currentTarget.value === "cancel"
+    ) {
+      if (value) setValue("0");
+      setOpenUnpledge(false);
+    } else {
+      if (parseInt(event.currentTarget.value) >= 0) {
+        setDisabled(true);
+        writeUnpledge({
+          args: [parseInt(event.currentTarget.value), utils.parseEther(value)],
+        });
+        setOpenUnpledge(false);
+        if (value) setValue("0");
+      }
+    }
+  };
+
+  const handleCloseClaim = (event, reason) => {
+    if (
+      (reason && (reason === "backdropClick" || reason === "escapeKeyDown")) ||
+      event.currentTarget.value === "cancel"
+    ) {
+      setOpenClaim(false);
+    } else {
+      if (parseInt(event.currentTarget.value) >= 0) {
+        setDisabled(true);
+        writeClaim({
+          args: [parseInt(event.currentTarget.value)],
+        });
+        setOpenClaim(false);
+      }
+    }
+  };
+
+  const handleCloseRefund = (event, reason) => {
+    if (
+      (reason && (reason === "backdropClick" || reason === "escapeKeyDown")) ||
+      event.currentTarget.value === "cancel"
+    ) {
+      setOpenRefund(false);
+    } else {
+      if (parseInt(event.currentTarget.value) >= 0) {
+        setDisabled(true);
+        writeRefund({
+          args: [parseInt(event.currentTarget.value)],
+        });
+        setOpenRefund(false);
+      }
+    }
+  };
+
+  const handleCloseCancel = (event, reason) => {
+    if (
+      (reason && (reason === "backdropClick" || reason === "escapeKeyDown")) ||
+      event.currentTarget.value === "cancel"
+    ) {
+      setOpenCancel(false);
+    } else {
+      if (parseInt(event.currentTarget.value) >= 0) {
+        setDisabled(true);
+        writeCancel({
+          args: [parseInt(event.currentTarget.value)],
+        });
+        setOpenCancel(false);
+      }
+    }
+  };
+  const idxCampaignFormatted = idxCampaign.toString();
+  const creator = campaign[0];
+  const creatorFormatted = creator;
+  const goalFormatted = campaign[1].toString();
+  const totalPledgedFormatted = formatBalance(campaign[2]);
   const startAtFormatted = new Date(
     parseInt(campaign[3]) * 1000
   ).toLocaleString();
   const endAtFormatted = new Date(
     parseInt(campaign[4]) * 1000
   ).toLocaleString();
+  const claimedFormatted = campaign[5].toString() === "false" ? "no" : "yes";
+  const pledgedAmountFormatted = formatBalance(pledgedAmount);
+
   return (
-    <TableRow key={idxCampaign}>
-      <TableCell align="left">{idxCampaign.toString()}</TableCell>
-      <TableCell align="left">{shortenAddress(campaign[0])}</TableCell>
-      <TableCell align="right">{campaign[1].toString()}</TableCell>
-      <TableCell align="right">{campaign[2].toString()}</TableCell>
-      <TableCell align="right">{startAtFormatted}</TableCell>
-      <TableCell align="right">{endAtFormatted}</TableCell>
-      <TableCell align="right">{campaign[5].toString()}</TableCell>
-      <TableCell align="right">{pledgedAmount.toString()}</TableCell>
-      <TableCell align="right">
-        <Stack
-          direction="column"
-          justifyContent="flex-start"
-          alignItems="flex-start"
-          spacing={0.5}
-          padding={0}
-        >
+    <>
+      <TableRow key={idxCampaign} hover={true}>
+        <TableCell align="left">{idxCampaignFormatted}</TableCell>
+        <TableCell align="left">{creatorFormatted}</TableCell>
+        <TableCell align="right">{goalFormatted}</TableCell>
+        <TableCell align="right">{totalPledgedFormatted}</TableCell>
+        <TableCell align="right">{startAtFormatted}</TableCell>
+        <TableCell align="right">{endAtFormatted}</TableCell>
+        <TableCell align="right">{claimedFormatted}</TableCell>
+        <TableCell align="right">{pledgedAmountFormatted}</TableCell>
+        <TableCell align="left">
           <Stack
-            direction="row"
+            direction="column"
             justifyContent="flex-start"
             alignItems="flex-start"
             spacing={0.5}
             padding={0}
           >
-            <Button
-              variant="contained"
-              size="small"
-              value={idxCampaign}
-              disabled={disabled}
-              endIcon={<GetStatusIcon status={statusPledged} />} //to be reviewed
+            <Stack
+              direction="row"
+              justifyContent="flex-start"
+              alignItems="flex-start"
+              spacing={0.5}
+              padding={0}
             >
-              pledge
-            </Button>
-            <Button
-              variant="contained"
-              size="small"
-              value={idxCampaign}
-              disabled={disabled}
-              endIcon={<GetStatusIcon status={statusPledged} />} //to be reviewed
-            >
-              claim
-            </Button>
-            {campaign[0] === account?.address && (
               <Button
                 variant="contained"
                 size="small"
                 value={idxCampaign}
-                disabled={disabled}
-                endIcon={<GetStatusIcon status={statusPledged} />} //to be reviewed
+                disabled={disabled || isLoadingPledge}
+                onClick={() => setOpenPledge(true)}
+                endIcon={<GetStatusIcon status={statusPledge} />}
               >
-                cancel
+                pledge
               </Button>
-            )}
-          </Stack>
-          <Stack
-            direction="row"
-            justifyContent="flex-start"
-            alignItems="flex-start"
-            spacing={0.5}
-            padding={0}
-          >
-            <Button
-              variant="contained"
-              size="small"
-              value={idxCampaign}
-              disabled={disabled}
-              endIcon={<GetStatusIcon status={statusPledged} />} //to be reviewed
+              <Dialog open={openPledge} onClose={handleClosePledge}>
+                <DialogTitle>Pledge</DialogTitle>
+                <DialogContent>
+                  <DialogContentText>
+                    Enter the value to pledge for the campaign #{idxCampaign}
+                  </DialogContentText>
+                  <TextField
+                    autoFocus
+                    size="small"
+                    margin="dense"
+                    id="value"
+                    label="Value to pledge"
+                    type="number"
+                    value={value}
+                    onChange={(e) => setValue(e.currentTarget.value)}
+                    fullWidth
+                    variant="standard"
+                  />
+                </DialogContent>
+                <DialogActions>
+                  <Button
+                    size="small"
+                    onClick={handleClosePledge}
+                    value="cancel"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={handleClosePledge}
+                    value={`${idxCampaign}`}
+                  >
+                    Pledge
+                  </Button>
+                </DialogActions>
+              </Dialog>
+              {/* // if creator===current account, we can claim */}
+              {creator === account?.address && (
+                <>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    value={idxCampaign}
+                    disabled={disabled || isLoadingClaim}
+                    onClick={() => setOpenClaim(true)}
+                    endIcon={<GetStatusIcon status={statusClaim} />}
+                  >
+                    claim
+                  </Button>
+                  <Dialog open={openClaim} onClose={handleCloseClaim}>
+                    <DialogTitle>Claim</DialogTitle>
+                    <DialogContent>
+                      <DialogContentText>
+                        Do you want to claim {formatBalance(pledgedAmount)} for
+                        the campaign #{idxCampaign} ?
+                      </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                      <Button
+                        size="small"
+                        onClick={handleCloseClaim}
+                        value="cancel"
+                      >
+                        cancel
+                      </Button>
+                      <Button
+                        size="small"
+                        onClick={handleCloseClaim}
+                        value={`${idxCampaign}`}
+                      >
+                        claim
+                      </Button>
+                    </DialogActions>
+                  </Dialog>
+                </>
+              )}
+              {/* // if creator===current account, we can cancel */}
+              {creator === account?.address && (
+                <>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    value={idxCampaign}
+                    disabled={disabled || isLoadingCancel}
+                    onClick={() => setOpenCancel(true)}
+                    endIcon={<GetStatusIcon status={statusCancel} />}
+                  >
+                    cancel
+                  </Button>
+                  <Dialog open={openCancel} onClose={handleCloseCancel}>
+                    <DialogTitle>Cancel</DialogTitle>
+                    <DialogContent>
+                      <DialogContentText>
+                        Do you want to cancel the campaign #{idxCampaign} ?
+                      </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                      <Button
+                        size="small"
+                        onClick={handleCloseCancel}
+                        value="cancel"
+                      >
+                        no
+                      </Button>
+                      <Button
+                        size="small"
+                        onClick={handleCloseCancel}
+                        value={`${idxCampaign}`}
+                      >
+                        yes
+                      </Button>
+                    </DialogActions>
+                  </Dialog>
+                </>
+              )}
+            </Stack>
+            <Stack
+              direction="row"
+              justifyContent="flex-start"
+              alignItems="flex-start"
+              spacing={0.5}
+              padding={0}
             >
-              unpledge
-            </Button>
-
-            <Button
-              variant="contained"
-              size="small"
-              value={idxCampaign}
-              disabled={disabled}
-              endIcon={<GetStatusIcon status={statusPledged} />} //to be reviewed
-            >
-              refund
-            </Button>
+              {/* // if pledgedAmount is >0, we can unpledge */}
+              {pledgedAmount > 0 && (
+                <>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    value={idxCampaign}
+                    disabled={disabled}
+                    onClick={() => setOpenUnpledge(true)}
+                    endIcon={<GetStatusIcon status={statusUnpledge} />}
+                  >
+                    unpledge
+                  </Button>
+                  <Dialog open={openUnpledge} onClose={handleCloseUnpledge}>
+                    <DialogTitle>Unpledge</DialogTitle>
+                    <DialogContent>
+                      <DialogContentText>
+                        Enter the value to unpledge from the campaign #
+                        {idxCampaign}
+                      </DialogContentText>
+                      <TextField
+                        autoFocus
+                        size="small"
+                        margin="dense"
+                        id="value"
+                        label="Value to unpledge"
+                        type="number"
+                        value={value}
+                        onChange={(e) => setValue(e.currentTarget.value)}
+                        fullWidth
+                        variant="standard"
+                      />
+                    </DialogContent>
+                    <DialogActions>
+                      <Button
+                        size="small"
+                        onClick={handleCloseUnpledge}
+                        value="cancel"
+                      >
+                        cancel
+                      </Button>
+                      <Button
+                        size="small"
+                        onClick={handleCloseUnpledge}
+                        value={`${idxCampaign}`}
+                      >
+                        unpledge
+                      </Button>
+                    </DialogActions>
+                  </Dialog>
+                </>
+              )}
+              {/* // if pledgedAmount is >0, we can refund */}
+              {pledgedAmount > 0 && (
+                <>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    value={idxCampaign}
+                    disabled={disabled || isLoadingClaim}
+                    onClick={() => setOpenRefund(true)}
+                    endIcon={<GetStatusIcon status={statusRefund} />}
+                  >
+                    refund
+                  </Button>
+                  <Dialog open={openRefund} onClose={handleCloseRefund}>
+                    <DialogTitle>Refund</DialogTitle>
+                    <DialogContent>
+                      <DialogContentText>
+                        Do you want to be refunded with{" "}
+                        {formatBalance(pledgedAmount)} from the campaign #
+                        {idxCampaign} ?
+                      </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                      <Button
+                        size="small"
+                        onClick={handleCloseRefund}
+                        value="cancel"
+                      >
+                        cancel
+                      </Button>
+                      <Button
+                        size="small"
+                        onClick={handleCloseRefund}
+                        value={`${idxCampaign}`}
+                      >
+                        refund
+                      </Button>
+                    </DialogActions>
+                  </Dialog>
+                </>
+              )}
+            </Stack>
           </Stack>
-        </Stack>
-      </TableCell>
-    </TableRow>
+        </TableCell>
+      </TableRow>
+      {(isErrorPledge ||
+        isErrorUnpledge ||
+        isErrorClaim ||
+        isErrorRefund ||
+        isErrorCancel) && (
+        <>
+          {isErrorPledge && (
+            <TableRow key={idxCampaign + 10000}>
+              <TableCell colSpan={9}>
+                <ShowError
+                  message="Pledge:"
+                  flag={isErrorPledge}
+                  error={errorPledge}
+                />
+              </TableCell>
+            </TableRow>
+          )}
+          {isErrorUnpledge && (
+            <TableRow key={idxCampaign + 10001}>
+              <TableCell colSpan={9}>
+                <ShowError
+                  message="Unpledge:"
+                  flag={isErrorUnpledge}
+                  error={errorUnpledge}
+                />
+              </TableCell>
+            </TableRow>
+          )}
+          {isErrorClaim && (
+            <TableRow key={idxCampaign + 10002}>
+              <TableCell colSpan={9}>
+                <ShowError
+                  message="Claim:"
+                  flag={isErrorClaim}
+                  error={errorClaim}
+                />
+              </TableCell>
+            </TableRow>
+          )}
+          {isErrorRefund && (
+            <TableRow key={idxCampaign + 10003}>
+              <TableCell colSpan={9}>
+                <ShowError
+                  message="Refund:"
+                  flag={isErrorRefund}
+                  error={errorRefund}
+                />
+              </TableCell>
+            </TableRow>
+          )}
+          {isErrorCancel && (
+            <TableRow key={idxCampaign + 10004}>
+              <TableCell colSpan={9}>
+                <ShowError
+                  message="Cancel:"
+                  flag={isErrorCancel}
+                  error={errorCancel}
+                />
+              </TableCell>
+            </TableRow>
+          )}
+        </>
+      )}
+    </>
   );
 };
 
@@ -184,8 +694,27 @@ const CrowFund = ({
   account,
 }) => {
   const isMounted = useIsMounted();
-  const numConfirmations = getNumConfirmations(activeChain);
   const [disabled, setDisabled] = useState(false);
+  const numConfirmations = getNumConfirmations(activeChain);
+
+  const {
+    data: balanceAccount,
+    isSuccess: isSuccessBalanceAccount,
+    isError: isErrorBalanceAccount,
+    error: errorBalanceAccount,
+  } = useBalance({
+    addressOrName: account?.address,
+    enabled: Boolean(
+      activeChain &&
+        addressNotZero(contractAddress) &&
+        addressNotZero(tokenAddress)
+    ),
+    watch: Boolean(
+      activeChain &&
+        addressNotZero(contractAddress) &&
+        addressNotZero(tokenAddress)
+    ),
+  });
 
   const {
     data: balanceToken,
@@ -241,26 +770,28 @@ const CrowFund = ({
         padding={1}
       >
         <Typography variant="h6" gutterBottom component="div">
-          Crowfund
+          Crowfund ({contractAddress})
         </Typography>
         {account && isSuccessBalanceToken && (
           <Typography>
-            Connected Account :{shortenAddress(account?.address)} (
-            {formatBalance(balanceToken?.value)} {balanceToken?.symbol})
+            Connected Account {account?.address} (
+            {formatBalance(balanceToken?.value)} {balanceToken?.symbol}) (
+            {formatBalance(balanceAccount?.value)} {balanceAccount?.symbol})
           </Typography>
         )}
         <TableContainer component={Paper}>
-          <Table size="small" aria-label="Campaigns">
+          <Table padding="checkbox" size="normal" aria-label="Campaigns">
             <TableHead>
               <TableRow>
-                <TableCell align="left">#</TableCell>
-                <TableCell align="left">Creator</TableCell>
-                <TableCell align="left">Goal</TableCell>
-                <TableCell align="left">Total Pledged</TableCell>
-                <TableCell align="left">Start At</TableCell>
-                <TableCell align="left">End At</TableCell>
-                <TableCell align="left">Claimed</TableCell>
-                <TableCell align="left">Pledged</TableCell>
+                <TableCell align="center">#</TableCell>
+                <TableCell align="center">Creator</TableCell>
+                <TableCell align="center">Goal</TableCell>
+                <TableCell align="center">Total Pledged</TableCell>
+                <TableCell align="center">Start At</TableCell>
+                <TableCell align="center">End At</TableCell>
+                <TableCell align="center">Claimed</TableCell>
+                <TableCell align="center">Pledged</TableCell>
+                <TableCell align="center">Operations</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -273,6 +804,7 @@ const CrowFund = ({
                     contractABI={contractABI}
                     activeChain={activeChain}
                     account={account}
+                    numConfirmations={numConfirmations}
                   />
                 );
               })}
@@ -280,8 +812,13 @@ const CrowFund = ({
           </Table>
         </TableContainer>
       </Stack>
-      {isErrorBalanceToken && isErrorCampaignCount && (
+      {isErrorBalanceAccount && isErrorBalanceToken && isErrorCampaignCount && (
         <>
+          <ShowError
+            message="Balance Account:"
+            flag={isErrorBalanceAccount}
+            error={errorBalanceAccount}
+          />
           <ShowError
             message="Balance Token:"
             flag={isErrorBalanceToken}
