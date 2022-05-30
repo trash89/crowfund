@@ -10,15 +10,17 @@ const useTokenDetails = (
   account
 ) => {
   const isMounted = useIsMounted();
-
+  const isEnabled = Boolean(
+    isMounted && activeChain && account && addressNotZero(contractAddress)
+  );
   const {
     data: token,
     isError: isErrorToken,
     refetch: refetchToken,
   } = useToken({
     address: contractAddress,
-    enabled: Boolean(activeChain && account && addressNotZero(contractAddress)),
-    watch: Boolean(activeChain && account && addressNotZero(contractAddress)),
+    enabled: isEnabled,
+    watch: isEnabled,
   });
 
   const { data: owner, isError: isErrorOwner } = useContractRead(
@@ -28,10 +30,8 @@ const useTokenDetails = (
     },
     "owner",
     {
-      enabled: Boolean(
-        activeChain && account && addressNotZero(contractAddress)
-      ),
-      watch: Boolean(activeChain && account && addressNotZero(contractAddress)),
+      enabled: isEnabled,
+      watch: isEnabled,
     }
   );
 
@@ -43,10 +43,8 @@ const useTokenDetails = (
     "balanceOf",
     {
       args: [account?.address],
-      enabled: Boolean(
-        activeChain && account && addressNotZero(contractAddress)
-      ),
-      watch: Boolean(activeChain && account && addressNotZero(contractAddress)),
+      enabled: isEnabled,
+      watch: isEnabled,
     }
   );
 
@@ -58,10 +56,8 @@ const useTokenDetails = (
     "allowance",
     {
       args: [owner, account?.address],
-      enabled: Boolean(
-        activeChain && account && addressNotZero(contractAddress)
-      ),
-      watch: Boolean(activeChain && account && addressNotZero(contractAddress)),
+      enabled: isEnabled,
+      watch: isEnabled,
     }
   );
 

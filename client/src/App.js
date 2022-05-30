@@ -11,18 +11,16 @@ function App() {
   const isMounted = useIsMounted();
   if (!isMounted) return <></>;
   return (
-    <>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<SharedLayout />}>
-            <Route index element={<CrowfundContainer />} />
-            <Route path="/crowdfund" element={<CrowfundContainer />} />
-            <Route path="/crowtoken" element={<CrowTokenContainer />} />
-            <Route path="*" element={<Error />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<SharedLayout />}>
+          <Route index element={<CrowfundContainer />} />
+          <Route path="/crowdfund" element={<CrowfundContainer />} />
+          <Route path="/crowtoken" element={<CrowTokenContainer />} />
+          <Route path="*" element={<Error />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 
