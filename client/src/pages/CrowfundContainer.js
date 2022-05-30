@@ -3,7 +3,7 @@ import { useIsMounted, useGetContract } from "../hooks";
 import { useNetwork, useAccount } from "wagmi";
 import { addressNotZero } from "../utils/utils";
 
-import { SupportedNetworks, Crowfund } from "../components";
+import { SupportedNetworks, Crowfund, LaunchCampaign } from "../components";
 
 const CrowfundContainer = () => {
   const isMounted = useIsMounted();
@@ -19,7 +19,9 @@ const CrowfundContainer = () => {
     isLoading: isLoadingAccount,
     isSuccess: isSuccessAccount,
   } = useAccount({
-    enabled: Boolean(activeChain && addressNotZero(contractAddress)),
+    enabled: Boolean(
+      isMounted && activeChain && addressNotZero(contractAddress)
+    ),
   });
 
   if (!isMounted) return <></>;
@@ -46,6 +48,13 @@ const CrowfundContainer = () => {
           justifyContent="flex-start"
           alignItems="flex-start"
         >
+          <LaunchCampaign
+            activeChain={activeChain}
+            contractAddress={contractAddress}
+            contractABI={contractABI}
+            account={account}
+          />
+
           <Crowfund
             activeChain={activeChain}
             contractAddress={contractAddress}

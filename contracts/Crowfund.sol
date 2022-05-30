@@ -2,7 +2,6 @@
 pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "./console.sol";
 
 contract Crowfund {
     event Launch(
@@ -12,6 +11,7 @@ contract Crowfund {
         uint32 startAt,
         uint32 endAt
     );
+
     event Cancel(uint256 id);
     event Pledge(uint256 indexed id, address indexed caller, uint256 amount);
     event Unpledge(uint256 indexed id, address indexed caller, uint256 amount);
@@ -51,10 +51,9 @@ contract Crowfund {
         uint32 _startAt,
         uint32 _endAt
     ) external returns (uint256) {
-        console.log("_startAt is %d, Now is %d", _startAt,block.timestamp);
         require(_startAt >= block.timestamp, "start at < now");
         require(_endAt >= _startAt, "end at < start at");
-        require(_endAt <= block.timestamp + 2 days, "end at > max duration");
+        require(_endAt <= block.timestamp + 7 days, "end at > max duration");
 
         count += 1;
         campaigns[count] = Campaign({

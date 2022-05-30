@@ -16,7 +16,7 @@ function App() {
         <Routes>
           <Route path="/" element={<SharedLayout />}>
             <Route index element={<CrowfundContainer />} />
-            <Route path="/crowfund" element={<CrowfundContainer />} />
+            <Route path="/crowdfund" element={<CrowfundContainer />} />
             <Route path="/crowtoken" element={<CrowTokenContainer />} />
             <Route path="*" element={<Error />} />
           </Route>

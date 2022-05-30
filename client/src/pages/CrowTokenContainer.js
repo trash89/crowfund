@@ -9,7 +9,6 @@ const CrowTokenContainer = () => {
   const isMounted = useIsMounted();
   const { activeChain } = useNetwork();
   const { address: tokenAddress, ABI: tokenABI } = useGetContract("CrowToken");
-
   const {
     data: account,
     error: errorAccount,
@@ -17,7 +16,7 @@ const CrowTokenContainer = () => {
     isLoading: isLoadingAccount,
     isSuccess: isSuccessAccount,
   } = useAccount({
-    enabled: Boolean(activeChain && addressNotZero(tokenAddress)),
+    enabled: Boolean(isMounted && activeChain && addressNotZero(tokenAddress)),
   });
 
   if (!isMounted) return <></>;

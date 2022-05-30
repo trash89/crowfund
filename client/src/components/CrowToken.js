@@ -22,11 +22,14 @@ import { GetStatusIcon, ShowError } from "../components";
 
 const CrowToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
   const isMounted = useIsMounted();
-  const numConfirmations = getNumConfirmations(activeChain);
   const [disabled, setDisabled] = useState(false);
   const [inputAddress, setInputAddress] = useState("");
   const [transferFrom, setTransferFrom] = useState("");
   const [inputValue, setInputValue] = useState("0");
+  const numConfirmations = getNumConfirmations(activeChain);
+  const isEnabled = Boolean(
+    isMounted && activeChain && account && addressNotZero(tokenAddress)
+  );
 
   // token details for display
   const {
@@ -56,13 +59,8 @@ const CrowToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
     "allowance",
     {
       args: [verifyAddress(transferFrom), account?.address],
-      enabled: Boolean(
-        activeChain &&
-          account &&
-          addressNotZero(tokenAddress) &&
-          verifyAddress(transferFrom)
-      ),
-      watch: Boolean(activeChain && account && addressNotZero(tokenAddress)),
+      enabled: Boolean(isEnabled && verifyAddress(transferFrom)),
+      watch: Boolean(isEnabled && verifyAddress(transferFrom)),
     }
   );
 
@@ -81,14 +79,14 @@ const CrowToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
     },
     "mint",
     {
-      enabled: Boolean(activeChain && account && addressNotZero(tokenAddress)),
+      enabled: isEnabled,
     }
   );
   const { status: statusMintWait } = useWaitForTransaction({
     hash: dataMint?.hash,
     wait: dataMint?.wait,
     confirmations: numConfirmations,
-    enabled: Boolean(activeChain && account && addressNotZero(tokenAddress)),
+    enabled: isEnabled,
   });
   // burnFrom function
   const {
@@ -105,13 +103,14 @@ const CrowToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
     },
     "burnFrom",
     {
-      enabled: Boolean(activeChain && account && addressNotZero(tokenAddress)),
+      enabled: isEnabled,
     }
   );
   const { status: statusBurnFromWait } = useWaitForTransaction({
     hash: dataBurnFrom?.hash,
     wait: dataBurnFrom?.wait,
     confirmations: numConfirmations,
+    enabled: isEnabled,
   });
 
   // burn function
@@ -130,13 +129,14 @@ const CrowToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
     },
     "burn",
     {
-      enabled: Boolean(activeChain && account && addressNotZero(tokenAddress)),
+      enabled: isEnabled,
     }
   );
   const { status: statusBurnWait } = useWaitForTransaction({
     hash: dataBurn?.hash,
     wait: dataBurn?.wait,
     confirmations: numConfirmations,
+    enabled: isEnabled,
   });
 
   // increaseAllowance(spender, value)
@@ -154,13 +154,14 @@ const CrowToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
     },
     "increaseAllowance",
     {
-      enabled: Boolean(activeChain && account && addressNotZero(tokenAddress)),
+      enabled: isEnabled,
     }
   );
   const { status: statusIncreaseAllowanceWait } = useWaitForTransaction({
     hash: dataIncreaseAllowance?.hash,
     wait: dataIncreaseAllowance?.wait,
     confirmations: numConfirmations,
+    enabled: isEnabled,
   });
 
   // decreaseAllowance(spender, value);
@@ -178,13 +179,14 @@ const CrowToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
     },
     "decreaseAllowance",
     {
-      enabled: Boolean(activeChain && account && addressNotZero(tokenAddress)),
+      enabled: isEnabled,
     }
   );
   const { status: statusDecreaseAllowanceWait } = useWaitForTransaction({
     hash: dataDecreaseAllowance?.hash,
     wait: dataDecreaseAllowance?.wait,
     confirmations: numConfirmations,
+    enabled: isEnabled,
   });
 
   // transfer(to, amount);
@@ -203,13 +205,14 @@ const CrowToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
     },
     "transfer",
     {
-      enabled: Boolean(activeChain && account && addressNotZero(tokenAddress)),
+      enabled: isEnabled,
     }
   );
   const { status: statusTransferWait } = useWaitForTransaction({
     hash: dataTransfer?.hash,
     wait: dataTransfer?.wait,
     confirmations: numConfirmations,
+    enabled: isEnabled,
   });
 
   // approve(spender, amount);
@@ -227,13 +230,14 @@ const CrowToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
     },
     "approve",
     {
-      enabled: Boolean(activeChain && account && addressNotZero(tokenAddress)),
+      enabled: isEnabled,
     }
   );
   const { status: statusApproveWait } = useWaitForTransaction({
     hash: dataApprove?.hash,
     wait: dataApprove?.wait,
     confirmations: numConfirmations,
+    enabled: isEnabled,
   });
 
   // transferOwnership(address newOwner)
@@ -251,13 +255,14 @@ const CrowToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
     },
     "transferOwnership",
     {
-      enabled: Boolean(activeChain && account && addressNotZero(tokenAddress)),
+      enabled: isEnabled,
     }
   );
   const { status: statusTransferOwnershipWait } = useWaitForTransaction({
     hash: dataTransferOwnership?.hash,
     wait: dataTransferOwnership?.wait,
     confirmations: numConfirmations,
+    enabled: isEnabled,
   });
 
   // transferFrom(address from, address to, uint256 amount)
@@ -275,13 +280,14 @@ const CrowToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
     },
     "transferFrom",
     {
-      enabled: Boolean(activeChain && account && addressNotZero(tokenAddress)),
+      enabled: isEnabled,
     }
   );
   const { status: statusTransferFromWait } = useWaitForTransaction({
     hash: dataTransferFrom?.hash,
     wait: dataTransferFrom?.wait,
     confirmations: numConfirmations,
+    enabled: isEnabled,
   });
 
   // useEffect to setup values
@@ -495,7 +501,7 @@ const CrowToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
         <Typography>
           Owner:{" "}
           {shortenAddress(tokenOwner ? tokenOwner : constants.AddressZero)},
-          TotalSupply: {formatBalance(token?.totalSupply?.value)}{" "}
+          TotalSupply: {formatBalance(token?.totalSupply?.value, 0)}{" "}
           {token?.symbol}
         </Typography>
       </Stack>
@@ -508,19 +514,18 @@ const CrowToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
         padding={1}
       >
         <Typography color={isOwner ? "blue" : "text.primary"}>
-          Connected account: {shortenAddress(account?.address)}{" "}
-          {isOwner && <>(token owner)</>}
+          Connected: {account?.address} {isOwner && <>(token owner)</>}
         </Typography>
         <Typography>
-          Balance:{formatBalance(balanceOf)} {token?.symbol}
+          Balance: {formatBalance(balanceOf, 0)} {token?.symbol}
         </Typography>
         <Typography>
-          Allowance to spend from owner:{formatBalance(allowance)}{" "}
+          Allowance to spend from owner: {formatBalance(allowance, 0)}{" "}
           {token?.symbol}
         </Typography>
         <Typography>
-          Allowance from {shortenAddress(verifyAddress(transferFrom))}:
-          {formatBalance(allowanceOther)} {token?.symbol}
+          Allowance from {shortenAddress(verifyAddress(transferFrom))}:{" "}
+          {formatBalance(allowanceOther, 0)} {token?.symbol}
         </Typography>
         <TextField
           fullWidth
@@ -531,7 +536,7 @@ const CrowToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
           label="Address To? (empty if owner)"
           size="small"
           value={inputAddress}
-          onChange={(e) => setInputAddress(e.currentTarget.value)}
+          onChange={(e) => setInputAddress(e.target.value)}
           disabled={disabled}
         />
         <TextField
@@ -543,7 +548,7 @@ const CrowToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
           label="Address From? (empty if owner)"
           size="small"
           value={transferFrom}
-          onChange={(e) => setTransferFrom(e.currentTarget.value)}
+          onChange={(e) => setTransferFrom(e.target.value)}
           disabled={disabled}
         />
         <TextField

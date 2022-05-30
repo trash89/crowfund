@@ -10,36 +10,42 @@ import { themeOptions } from "./MUITheme";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 
 import {
-  apiProvider,
-  configureChains,
-  //getDefaultWallets,
-  connectorsForWallets,
-  wallet,
+  getDefaultWallets,
   RainbowKitProvider,
+  // eslint-disable-next-line
+  connectorsForWallets,
+  // eslint-disable-next-line
+  wallet,
 } from "@rainbow-me/rainbowkit";
-import { createClient, chain, WagmiConfig } from "wagmi";
+import { createClient, chain, configureChains, WagmiConfig } from "wagmi";
+
+import { alchemyProvider } from "wagmi/providers/alchemy";
+import { publicProvider } from "wagmi/providers/public";
 
 // if (!process.env.REACT_APP_RINKEBY_URL || !process.env.REACT_APP_ARBRINKEBY_URL)
 //   throw new Error(
 //     "Missing environment variables. Make sure to set your .env file."
 //   );
 
-const { provider, chains } = configureChains(
-  [chain.hardhat, chain.rinkeby],
-  [apiProvider.alchemy(process.env.ALCHEMY_ID), apiProvider.fallback()]
+const { chains, provider } = configureChains(
+  [
+    //chain.hardhat,
+    chain.rinkeby,
+  ],
+  [alchemyProvider({ alchemyId: process.env.ALCHEMY_ID }), publicProvider()]
 );
 
-//const { connectors } = getDefaultWallets({
-//  appName: "Crowfund Ethereum App, with Wagmi,Rainbowkit and Material-UI",
-//  chains,
-//});
+const { connectors } = getDefaultWallets({
+  appName: "Crowdfund Ethereum App, with Wagmi,Rainbowkit and Material-UI",
+  chains,
+});
 
-const connectors = connectorsForWallets([
-  {
-    groupName: "Recommended",
-    wallets: [wallet.injected({ chains })],
-  },
-]);
+// const connectors = connectorsForWallets([
+//   {
+//     groupName: "Recommended",
+//     wallets: [wallet.injected({ chains })],
+//   },
+// ]);
 
 const wagmiClient = createClient({
   autoConnect: true,

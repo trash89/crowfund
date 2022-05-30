@@ -1,10 +1,10 @@
-# Client Application for the Crowfund contract
+# Client Application for the Crowdfund contract
 
 ## client application on Rinkeby testnet
 
-https://to-be-deployed.netlify.app/
+https://crowdfundfullstack.netlify.app/
 
-![Crowfund webapp ](../crowfund_frontend.png)
+![Crowfund webapp ](../crowdfund_frontend.png)
 
 ## Quickstart
 

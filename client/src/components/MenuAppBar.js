@@ -29,14 +29,14 @@ const MenuAppBar = () => {
           </NavLink>
 
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Crowfund
+            Crowdfund
           </Typography>
           <NavLink
             style={{ flexGrow: 1 }}
-            to="/crowfund"
+            to="/crowdfund"
             className={({ isActive }) => (isActive ? "link active" : "link")}
           >
-            Crowfund
+            Crowdfund
           </NavLink>
           <NavLink
             style={{ flexGrow: 1 }}
@@ -46,7 +46,11 @@ const MenuAppBar = () => {
             CrowToken
           </NavLink>
 
-          <ConnectButton />
+          <ConnectButton
+            accountStatus="address"
+            chainStatus="name"
+            showBalance={true}
+          />
         </Toolbar>
       </AppBar>
     </Box>

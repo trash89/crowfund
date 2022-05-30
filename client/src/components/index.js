@@ -4,6 +4,7 @@ import GetStatusIcon from "./GetStatusIcon";
 import ShowError from "./ShowError";
 import CrowToken from "./CrowToken";
 import Crowfund from "./Crowfund";
+import LaunchCampaign from "./LaunchCampaign";
 
 export {
   MenuAppBar,
@@ -11,5 +12,6 @@ export {
   SupportedNetworks,
   ShowError,
   Crowfund,
+  LaunchCampaign,
   CrowToken,
 };

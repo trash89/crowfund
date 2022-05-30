@@ -18,7 +18,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 
-import { BigNumber, utils, constants } from "ethers";
+import { BigNumber, utils } from "ethers";
 import {
   useContractRead,
   useContractWrite,
@@ -28,9 +28,9 @@ import {
 
 import {
   addressNotZero,
-  shortenAddress,
   formatBalance,
   getNumConfirmations,
+  shortenAddress,
 } from "../utils/utils";
 
 import { useIsMounted } from "../hooks";
@@ -52,6 +52,9 @@ const GetCampaign = ({
   const [openRefund, setOpenRefund] = useState(false);
   const [openCancel, setOpenCancel] = useState(false);
   const [disabled, setDisabled] = useState(false);
+  const isEnabled = Boolean(
+    isMounted && activeChain && account && addressNotZero(contractAddress)
+  );
   const {
     data: campaign,
     isLoading: isLoadingCampaign,
@@ -64,8 +67,8 @@ const GetCampaign = ({
     "campaigns",
     {
       args: [BigNumber.from(idxCampaign)],
-      enabled: Boolean(activeChain && addressNotZero(contractAddress)),
-      watch: Boolean(activeChain && addressNotZero(contractAddress)),
+      enabled: isEnabled,
+      watch: isEnabled,
     }
   );
 
@@ -73,7 +76,6 @@ const GetCampaign = ({
     data: pledgedAmount,
     isLoading: isLoadingpledgedAmount,
     isSuccess: isSuccesspledgedAmount,
-    status: statusPledgedAmount,
   } = useContractRead(
     {
       addressOrName: contractAddress,
@@ -82,8 +84,8 @@ const GetCampaign = ({
     "pledgedAmount",
     {
       args: [BigNumber.from(idxCampaign), account?.address],
-      enabled: Boolean(activeChain && addressNotZero(contractAddress)),
-      watch: Boolean(activeChain && addressNotZero(contractAddress)),
+      enabled: isEnabled,
+      watch: isEnabled,
     }
   );
   // pledge function
@@ -101,16 +103,14 @@ const GetCampaign = ({
     },
     "pledge",
     {
-      enabled: Boolean(
-        activeChain && account && addressNotZero(contractAddress)
-      ),
+      enabled: isEnabled,
     }
   );
   const { status: statusPledgeWait } = useWaitForTransaction({
     hash: dataPledge?.hash,
     wait: dataPledge?.wait,
     confirmations: numConfirmations,
-    enabled: Boolean(activeChain && account && addressNotZero(contractAddress)),
+    enabled: isEnabled,
   });
 
   // unpledge function
@@ -128,16 +128,14 @@ const GetCampaign = ({
     },
     "unpledge",
     {
-      enabled: Boolean(
-        activeChain && account && addressNotZero(contractAddress)
-      ),
+      enabled: isEnabled,
     }
   );
   const { status: statusUnpledgeWait } = useWaitForTransaction({
     hash: dataUnpledge?.hash,
     wait: dataUnpledge?.wait,
     confirmations: numConfirmations,
-    enabled: Boolean(activeChain && account && addressNotZero(contractAddress)),
+    enabled: isEnabled,
   });
 
   // claim function
@@ -155,16 +153,14 @@ const GetCampaign = ({
     },
     "claim",
     {
-      enabled: Boolean(
-        activeChain && account && addressNotZero(contractAddress)
-      ),
+      enabled: isEnabled,
     }
   );
   const { status: statusClaimWait } = useWaitForTransaction({
     hash: dataClaim?.hash,
     wait: dataClaim?.wait,
     confirmations: numConfirmations,
-    enabled: Boolean(activeChain && account && addressNotZero(contractAddress)),
+    enabled: isEnabled,
   });
 
   // refund function
@@ -182,16 +178,14 @@ const GetCampaign = ({
     },
     "refund",
     {
-      enabled: Boolean(
-        activeChain && account && addressNotZero(contractAddress)
-      ),
+      enabled: isEnabled,
     }
   );
   const { status: statusRefundWait } = useWaitForTransaction({
     hash: dataRefund?.hash,
     wait: dataRefund?.wait,
     confirmations: numConfirmations,
-    enabled: Boolean(activeChain && account && addressNotZero(contractAddress)),
+    enabled: isEnabled,
   });
 
   // cancel function
@@ -209,16 +203,14 @@ const GetCampaign = ({
     },
     "cancel",
     {
-      enabled: Boolean(
-        activeChain && account && addressNotZero(contractAddress)
-      ),
+      enabled: isEnabled,
     }
   );
   const { status: statusCancelWait } = useWaitForTransaction({
     hash: dataCancel?.hash,
     wait: dataCancel?.wait,
     confirmations: numConfirmations,
-    enabled: Boolean(activeChain && account && addressNotZero(contractAddress)),
+    enabled: isEnabled,
   });
 
   // useEffect to setup values
@@ -350,18 +342,17 @@ const GetCampaign = ({
   };
   const idxCampaignFormatted = idxCampaign.toString();
   const creator = campaign[0];
-  const creatorFormatted = creator;
-  const goalFormatted = campaign[1].toString();
-  const totalPledgedFormatted = formatBalance(campaign[2]);
+  const creatorFormatted = shortenAddress(creator);
+  const goalFormatted = formatBalance(campaign[1], 0);
+  const totalPledgedFormatted = formatBalance(campaign[2], 0);
   const startAtFormatted = new Date(
     parseInt(campaign[3]) * 1000
   ).toLocaleString();
-  const endAtFormatted = new Date(
-    parseInt(campaign[4]) * 1000
-  ).toLocaleString();
+  const endAt = new Date(parseInt(campaign[4]) * 1000);
+  const endAtFormatted = endAt.toLocaleString();
   const claimedFormatted = campaign[5].toString() === "false" ? "no" : "yes";
-  const pledgedAmountFormatted = formatBalance(pledgedAmount);
-
+  const pledgedAmountFormatted = formatBalance(pledgedAmount, 0);
+  const dateNow = new Date().getTime() / 1000;
   return (
     <>
       <TableRow key={idxCampaign} hover={true}>
@@ -388,52 +379,58 @@ const GetCampaign = ({
               spacing={0.5}
               padding={0}
             >
-              <Button
-                variant="contained"
-                size="small"
-                value={idxCampaign}
-                disabled={disabled || isLoadingPledge}
-                onClick={() => setOpenPledge(true)}
-                endIcon={<GetStatusIcon status={statusPledge} />}
-              >
-                pledge
-              </Button>
-              <Dialog open={openPledge} onClose={handleClosePledge}>
-                <DialogTitle>Pledge</DialogTitle>
-                <DialogContent>
-                  <DialogContentText>
-                    Enter the value to pledge for the campaign #{idxCampaign}
-                  </DialogContentText>
-                  <TextField
-                    autoFocus
-                    size="small"
-                    margin="dense"
-                    id="value"
-                    label="Value to pledge"
-                    type="number"
-                    value={value}
-                    onChange={(e) => setValue(e.currentTarget.value)}
-                    fullWidth
-                    variant="standard"
-                  />
-                </DialogContent>
-                <DialogActions>
+              {endAt > dateNow && (
+                <>
                   <Button
+                    variant="contained"
                     size="small"
-                    onClick={handleClosePledge}
-                    value="cancel"
+                    value={idxCampaign}
+                    disabled={disabled || isLoadingPledge}
+                    onClick={() => setOpenPledge(true)}
+                    endIcon={<GetStatusIcon status={statusPledge} />}
                   >
-                    Cancel
+                    pledge
                   </Button>
-                  <Button
-                    size="small"
-                    onClick={handleClosePledge}
-                    value={`${idxCampaign}`}
-                  >
-                    Pledge
-                  </Button>
-                </DialogActions>
-              </Dialog>
+                  <Dialog open={openPledge} onClose={handleClosePledge}>
+                    <DialogTitle>Pledge</DialogTitle>
+                    <DialogContent>
+                      <DialogContentText>
+                        Enter the value to pledge for the campaign #
+                        {idxCampaign}
+                      </DialogContentText>
+                      <TextField
+                        autoFocus
+                        size="small"
+                        margin="dense"
+                        id="value"
+                        label="Value to pledge"
+                        type="number"
+                        value={value}
+                        onChange={(e) => setValue(e.target.value)}
+                        fullWidth
+                        variant="standard"
+                      />
+                    </DialogContent>
+                    <DialogActions>
+                      <Button
+                        size="small"
+                        onClick={handleClosePledge}
+                        value="cancel"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="small"
+                        onClick={handleClosePledge}
+                        value={`${idxCampaign}`}
+                      >
+                        Pledge
+                      </Button>
+                    </DialogActions>
+                  </Dialog>
+                </>
+              )}
+
               {/* // if creator===current account, we can claim */}
               {creator === account?.address && (
                 <>
@@ -528,7 +525,7 @@ const GetCampaign = ({
                     variant="contained"
                     size="small"
                     value={idxCampaign}
-                    disabled={disabled}
+                    disabled={disabled || isLoadingUnpledge}
                     onClick={() => setOpenUnpledge(true)}
                     endIcon={<GetStatusIcon status={statusUnpledge} />}
                   >
@@ -549,7 +546,7 @@ const GetCampaign = ({
                         label="Value to unpledge"
                         type="number"
                         value={value}
-                        onChange={(e) => setValue(e.currentTarget.value)}
+                        onChange={(e) => setValue(e.target.value)}
                         fullWidth
                         variant="standard"
                       />
@@ -580,7 +577,7 @@ const GetCampaign = ({
                     variant="contained"
                     size="small"
                     value={idxCampaign}
-                    disabled={disabled || isLoadingClaim}
+                    disabled={disabled || isLoadingRefund}
                     onClick={() => setOpenRefund(true)}
                     endIcon={<GetStatusIcon status={statusRefund} />}
                   >
@@ -694,8 +691,13 @@ const CrowFund = ({
   account,
 }) => {
   const isMounted = useIsMounted();
-  const [disabled, setDisabled] = useState(false);
   const numConfirmations = getNumConfirmations(activeChain);
+  const isEnabled = Boolean(
+    isMounted &&
+      activeChain &&
+      addressNotZero(contractAddress) &&
+      addressNotZero(tokenAddress)
+  );
 
   const {
     data: balanceAccount,
@@ -704,16 +706,8 @@ const CrowFund = ({
     error: errorBalanceAccount,
   } = useBalance({
     addressOrName: account?.address,
-    enabled: Boolean(
-      activeChain &&
-        addressNotZero(contractAddress) &&
-        addressNotZero(tokenAddress)
-    ),
-    watch: Boolean(
-      activeChain &&
-        addressNotZero(contractAddress) &&
-        addressNotZero(tokenAddress)
-    ),
+    enabled: isEnabled,
+    watch: isEnabled,
   });
 
   const {
@@ -724,16 +718,8 @@ const CrowFund = ({
   } = useBalance({
     addressOrName: account?.address,
     token: tokenAddress,
-    enabled: Boolean(
-      activeChain &&
-        addressNotZero(contractAddress) &&
-        addressNotZero(tokenAddress)
-    ),
-    watch: Boolean(
-      activeChain &&
-        addressNotZero(contractAddress) &&
-        addressNotZero(tokenAddress)
-    ),
+    enabled: isEnabled,
+    watch: isEnabled,
   });
 
   const {
@@ -747,10 +733,8 @@ const CrowFund = ({
     },
     "count",
     {
-      enabled: Boolean(
-        activeChain && account && addressNotZero(contractAddress)
-      ),
-      watch: Boolean(activeChain && account && addressNotZero(contractAddress)),
+      enabled: isEnabled,
+      watch: isEnabled,
     }
   );
 
@@ -772,9 +756,9 @@ const CrowFund = ({
         <Typography variant="h6" gutterBottom component="div">
           Crowfund ({contractAddress})
         </Typography>
-        {account && isSuccessBalanceToken && (
+        {account && isSuccessBalanceAccount && isSuccessBalanceToken && (
           <Typography>
-            Account {account?.address} ({formatBalance(balanceToken?.value)}{" "}
+            Account {account?.address} ({formatBalance(balanceToken?.value, 0)}{" "}
             {balanceToken?.symbol}) ({formatBalance(balanceAccount?.value)}{" "}
             {balanceAccount?.symbol})
           </Typography>
