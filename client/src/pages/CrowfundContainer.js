@@ -39,33 +39,29 @@ const CrowfundContainer = () => {
   }
 
   return (
-    <>
-      {isSuccessAccount && addressNotZero(tokenAddress) && (
-        <Stack
-          direction="row"
-          spacing={2}
-          padding={1}
-          justifyContent="flex-start"
-          alignItems="flex-start"
-        >
-          <LaunchCampaign
-            activeChain={activeChain}
-            contractAddress={contractAddress}
-            contractABI={contractABI}
-            account={account}
-          />
+    <Stack
+      direction="row"
+      spacing={2}
+      padding={1}
+      justifyContent="flex-start"
+      alignItems="flex-start"
+    >
+      <LaunchCampaign
+        activeChain={activeChain}
+        contractAddress={contractAddress}
+        contractABI={contractABI}
+        account={account}
+      />
 
-          <Crowfund
-            activeChain={activeChain}
-            contractAddress={contractAddress}
-            contractABI={contractABI}
-            tokenAddress={tokenAddress}
-            tokenABI={tokenABI}
-            account={account}
-          />
-        </Stack>
-      )}
-    </>
+      <Crowfund
+        activeChain={activeChain}
+        contractAddress={contractAddress}
+        contractABI={contractABI}
+        tokenAddress={tokenAddress}
+        tokenABI={tokenABI}
+        account={account}
+      />
+    </Stack>
   );
 };
 
