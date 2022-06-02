@@ -11,8 +11,6 @@ node_modules
 .env
 coverage
 coverage.json
-package-lock.json
-client/package-lock.json
 typechain
 
 #Hardhat files
