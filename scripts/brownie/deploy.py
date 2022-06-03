@@ -1,27 +1,27 @@
-from brownie import chain, CrowToken, Crowfund
+from brownie import chain, CrowdToken, Crowdfund
 from scripts.brownie.helpful_scripts import get_account, update_front_end
 
 INITIAL_MINT = 10000   # 10000 tokens
 
 
 def main():
-    crowtoken = deployCrowToken(update_front_end_flag=True)
-    crowfund = deployCrowfund(crowtoken.address, update_front_end_flag=True)
+    crowdtoken = deployCrowdToken(update_front_end_flag=True)
+    crowdfund = deployCrowdfund(crowdtoken.address, update_front_end_flag=True)
 
 
-def deployCrowToken(update_front_end_flag=True):
-    print("Deploying CrowToken contract...")
-    crowtoken = CrowToken.deploy(INITIAL_MINT, {"from": get_account()})
-    print(f"Deployed CrowToken at {crowtoken}...")
+def deployCrowdToken(update_front_end_flag=True):
+    print("Deploying CrowdToken contract...")
+    crowdtoken = CrowdToken.deploy(INITIAL_MINT, {"from": get_account()})
+    print(f"Deployed CrowdToken at {crowdtoken}...")
     if update_front_end_flag:
         update_front_end()
-    return crowtoken
+    return crowdtoken
 
 
-def deployCrowfund(token_address, update_front_end_flag=True):
-    print("Deploying Crowfund contract...")
-    crowfund = Crowfund.deploy(token_address, {"from": get_account()})
-    print(f"Deployed Crowfund at {crowfund}...")
+def deployCrowdfund(token_address, update_front_end_flag=True):
+    print("Deploying Crowdfund contract...")
+    crowdfund = Crowdfund.deploy(token_address, {"from": get_account()})
+    print(f"Deployed Crowdfund at {crowdfund}...")
     if update_front_end_flag:
         update_front_end()
-    return crowfund
+    return crowdfund

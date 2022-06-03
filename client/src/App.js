@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import {
-  CrowfundContainer,
-  CrowTokenContainer,
+  CrowdfundContainer,
+  CrowdTokenContainer,
   SharedLayout,
   Error,
 } from "./pages";
@@ -14,9 +14,9 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<SharedLayout />}>
-          <Route index element={<CrowfundContainer />} />
-          <Route path="/crowdfund" element={<CrowfundContainer />} />
-          <Route path="/crowtoken" element={<CrowTokenContainer />} />
+          <Route index element={<CrowdfundContainer />} />
+          <Route path="/crowdfund" element={<CrowdfundContainer />} />
+          <Route path="/crowdtoken" element={<CrowdTokenContainer />} />
           <Route path="*" element={<Error />} />
         </Route>
       </Routes>

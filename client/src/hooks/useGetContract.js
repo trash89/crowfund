@@ -3,8 +3,8 @@ import { constants, utils } from "ethers";
 
 import networkMapping from "../chain-info/map.json";
 
-import contract1 from "../chain-info/Crowfund.json";
-import contract2 from "../chain-info/CrowToken.json";
+import contract1 from "../chain-info/Crowdfund.json";
+import contract2 from "../chain-info/CrowdToken.json";
 
 const useGetContract = (contractName) => {
   const { activeChain } = useNetwork();
@@ -23,13 +23,13 @@ const useGetContract = (contractName) => {
 
   const formattedAddress = utils.getAddress(contractAddress);
 
-  if (contractName === "Crowfund") {
+  if (contractName === "Crowdfund") {
     return {
       address: activeChain ? formattedAddress : constants.AddressZero,
       ABI: abiContract1,
     };
   }
-  if (contractName === "CrowToken") {
+  if (contractName === "CrowdToken") {
     return {
       address: activeChain ? formattedAddress : constants.AddressZero,
       ABI: abiContract2,

@@ -109,7 +109,6 @@ const LaunchCampaign = ({
           disabled={disabled}
         />
         <TextField
-          autoFocus
           size="small"
           margin="dense"
           id="startAt"
@@ -122,7 +121,6 @@ const LaunchCampaign = ({
           disabled={disabled}
         />
         <TextField
-          autoFocus
           size="small"
           margin="dense"
           id="endAt"

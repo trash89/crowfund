@@ -1,6 +1,6 @@
 import Error from "./Error";
-import CrowfundContainer from "./CrowfundContainer";
-import CrowTokenContainer from "./CrowTokenContainer";
+import CrowdfundContainer from "./CrowdfundContainer";
+import CrowdTokenContainer from "./CrowdTokenContainer";
 import SharedLayout from "./SharedLayout";
 
-export { Error, CrowfundContainer, CrowTokenContainer, SharedLayout };
+export { Error, CrowdfundContainer, CrowdTokenContainer, SharedLayout };

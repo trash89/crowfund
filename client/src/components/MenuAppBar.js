@@ -40,7 +40,7 @@ const MenuAppBar = () => {
           </NavLink>
           <NavLink
             style={{ flexGrow: 1 }}
-            to="/crowtoken"
+            to="/crowdtoken"
             className={({ isActive }) => (isActive ? "link active" : "link")}
           >
             CrowToken

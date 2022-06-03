@@ -1,4 +1,4 @@
-from brownie import accounts, chain, network, exceptions, CrowToken, Crowfund
+from brownie import accounts, chain, network, exceptions, CrowdToken, Crowdfund
 from scripts.brownie.helpful_scripts import get_account, LOCAL_BLOCKCHAIN_ENVIRONMENTS
 import pytest
 import datetime
@@ -6,8 +6,8 @@ import time
 
 
 def main():
-    crowtoken = CrowToken[-1]
-    crowfund = Crowfund[-1]
+    crowdtoken = CrowdToken[-1]
+    crowdfund = Crowdfund[-1]
 
     alice = get_account()
     if network.show_active() in LOCAL_BLOCKCHAIN_ENVIRONMENTS:
@@ -17,30 +17,30 @@ def main():
         bob = get_account(id="m2")
         peter = get_account(id="m3")
 
-    alice_transfer_tokens(crowtoken, get_account(index=1), 50*10**18)
-    alice_transfer_tokens(crowtoken, get_account(index=2), 20*10**18)
+    alice_transfer_tokens(crowdtoken, get_account(index=1), 50*10**18)
+    alice_transfer_tokens(crowdtoken, get_account(index=2), 20*10**18)
 
     # alice launch a campaign
     goal = 100*10**18
     startAt = chain.time()+60  # +60sec
     # print(datetime.datetime.fromtimestamp(startAt))
     endAt = startAt+60*60*3  # +3h
-    campaignId = launchCampaign(crowfund, get_account(), goal, startAt, endAt)
-    approve_tokens(get_account(), crowtoken, crowfund, 100*10**18)
+    campaignId = launchCampaign(crowdfund, get_account(), goal, startAt, endAt)
+    approve_tokens(get_account(), crowdtoken, crowdfund, 100*10**18)
     print("wait 60 secs...")
     time.sleep(60)
-    pledge_tokens(campaignId, 20*10**18, get_account(), crowfund)
+    pledge_tokens(campaignId, 20*10**18, get_account(), crowdfund)
 
     # bob launch a campaign
     goal = 150*10**18
     startAt = chain.time()+60  # +60sec
     endAt = startAt+60*60*3  # +3h
     campaignId = launchCampaign(
-        crowfund, get_account(index=1), goal, startAt, endAt)
-    approve_tokens(get_account(index=1), crowtoken, crowfund, 50*10**18)
+        crowdfund, get_account(index=1), goal, startAt, endAt)
+    approve_tokens(get_account(index=1), crowdtoken, crowdfund, 50*10**18)
     print("wait 60 secs...")
     time.sleep(60)
-    pledge_tokens(campaignId, 50*10**18, get_account(index=1), crowfund)
+    pledge_tokens(campaignId, 50*10**18, get_account(index=1), crowdfund)
 
 
 def alice_transfer_tokens(which_token, to, how_much):
