@@ -19,7 +19,7 @@ An example of .env file :
 
 ```bash .env
 GENERATE_SOURCEMAP=false
-ALCHEMY_ID="your-api-key"
+REACT_APP_ALCHEMY_ID="your-api-key"
 ```
 
 ### `start the application`

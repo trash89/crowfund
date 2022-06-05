@@ -8,7 +8,9 @@ export const themeOptions = {
       main: "#f50057",
     },
   },
-  spacing: 8,
+  shape: {
+    borderRadius: 4,
+  },
   overrides: {
     MuiButton: {
       root: {
@@ -70,8 +72,5 @@ export const themeOptions = {
       margin: "dense",
       size: "small",
     },
-  },
-  shape: {
-    borderRadius: 4,
   },
 };

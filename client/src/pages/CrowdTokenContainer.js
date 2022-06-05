@@ -5,7 +5,7 @@ import { addressNotZero } from "../utils/utils";
 
 import { SupportedNetworks, CrowdToken } from "../components";
 
-const CrowdTokenContainer = () => {
+const MyTokenContainer = () => {
   const isMounted = useIsMounted();
   const { activeChain } = useNetwork();
   const { address: tokenAddress, ABI: tokenABI } = useGetContract("CrowdToken");
@@ -37,8 +37,8 @@ const CrowdTokenContainer = () => {
     <>
       {isSuccessAccount && addressNotZero(tokenAddress) && (
         <Stack
-          direction="row"
-          spacing={2}
+          direction="column"
+          spacing={1}
           padding={1}
           justifyContent="flex-start"
           alignItems="flex-start"
@@ -55,4 +55,4 @@ const CrowdTokenContainer = () => {
   );
 };
 
-export default CrowdTokenContainer;
+export default MyTokenContainer;

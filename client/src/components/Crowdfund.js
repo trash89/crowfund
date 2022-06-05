@@ -19,22 +19,12 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 
 import { BigNumber, utils } from "ethers";
-import {
-  useContractRead,
-  useContractWrite,
-  useWaitForTransaction,
-  useBalance,
-} from "wagmi";
+import { useContractRead, useBalance } from "wagmi";
 
-import {
-  addressNotZero,
-  formatBalance,
-  getNumConfirmations,
-  shortenAddress,
-} from "../utils/utils";
+import { addressNotZero, formatBalance, shortenAddress } from "../utils/utils";
 
-import { useIsMounted } from "../hooks";
-import { GetStatusIcon, ShowError } from ".";
+import { useIsMounted, useGetFuncWrite } from "../hooks";
+import { GetStatusIcon, ShowError } from "../components";
 
 const GetCampaign = ({
   idxCampaign,
@@ -42,10 +32,12 @@ const GetCampaign = ({
   contractAddress,
   contractABI,
   account,
-  numConfirmations,
 }) => {
   const isMounted = useIsMounted();
-  const [value, setValue] = useState("0");
+  const [input, setInput] = useState({ value: "0" });
+  const [isErrorInput, setIsErrorInput] = useState({
+    value: false,
+  });
   const [openPledge, setOpenPledge] = useState(false);
   const [openUnpledge, setOpenUnpledge] = useState(false);
   const [openClaim, setOpenClaim] = useState(false);
@@ -88,130 +80,81 @@ const GetCampaign = ({
       watch: isEnabled,
     }
   );
+
   // pledge function
   const {
-    data: dataPledge,
     error: errorPledge,
     isError: isErrorPledge,
-    isLoading: isLoadingPledge,
     write: writePledge,
     status: statusPledge,
-  } = useContractWrite(
-    {
-      addressOrName: contractAddress,
-      contractInterface: contractABI,
-    },
+    statusWait: statusPledgeWait,
+  } = useGetFuncWrite(
     "pledge",
-    {
-      enabled: isEnabled,
-    }
+    activeChain,
+    contractAddress,
+    contractABI,
+    isEnabled
   );
-  const { status: statusPledgeWait } = useWaitForTransaction({
-    hash: dataPledge?.hash,
-    wait: dataPledge?.wait,
-    confirmations: numConfirmations,
-    enabled: isEnabled,
-  });
 
   // unpledge function
   const {
-    data: dataUnpledge,
     error: errorUnpledge,
     isError: isErrorUnpledge,
-    isLoading: isLoadingUnpledge,
     write: writeUnpledge,
     status: statusUnpledge,
-  } = useContractWrite(
-    {
-      addressOrName: contractAddress,
-      contractInterface: contractABI,
-    },
+    statusWait: statusUnpledgeWait,
+  } = useGetFuncWrite(
     "unpledge",
-    {
-      enabled: isEnabled,
-    }
+    activeChain,
+    contractAddress,
+    contractABI,
+    isEnabled
   );
-  const { status: statusUnpledgeWait } = useWaitForTransaction({
-    hash: dataUnpledge?.hash,
-    wait: dataUnpledge?.wait,
-    confirmations: numConfirmations,
-    enabled: isEnabled,
-  });
 
   // claim function
   const {
-    data: dataClaim,
     error: errorClaim,
     isError: isErrorClaim,
-    isLoading: isLoadingClaim,
     write: writeClaim,
     status: statusClaim,
-  } = useContractWrite(
-    {
-      addressOrName: contractAddress,
-      contractInterface: contractABI,
-    },
+    statusWait: statusClaimWait,
+  } = useGetFuncWrite(
     "claim",
-    {
-      enabled: isEnabled,
-    }
+    activeChain,
+    contractAddress,
+    contractABI,
+    isEnabled
   );
-  const { status: statusClaimWait } = useWaitForTransaction({
-    hash: dataClaim?.hash,
-    wait: dataClaim?.wait,
-    confirmations: numConfirmations,
-    enabled: isEnabled,
-  });
 
   // refund function
   const {
-    data: dataRefund,
     error: errorRefund,
     isError: isErrorRefund,
-    isLoading: isLoadingRefund,
     write: writeRefund,
     status: statusRefund,
-  } = useContractWrite(
-    {
-      addressOrName: contractAddress,
-      contractInterface: contractABI,
-    },
+    statusWait: statusRefundWait,
+  } = useGetFuncWrite(
     "refund",
-    {
-      enabled: isEnabled,
-    }
+    activeChain,
+    contractAddress,
+    contractABI,
+    isEnabled
   );
-  const { status: statusRefundWait } = useWaitForTransaction({
-    hash: dataRefund?.hash,
-    wait: dataRefund?.wait,
-    confirmations: numConfirmations,
-    enabled: isEnabled,
-  });
 
   // cancel function
   const {
-    data: dataCancel,
     error: errorCancel,
     isError: isErrorCancel,
-    isLoading: isLoadingCancel,
     write: writeCancel,
     status: statusCancel,
-  } = useContractWrite(
-    {
-      addressOrName: contractAddress,
-      contractInterface: contractABI,
-    },
+    statusWait: statusCancelWait,
+  } = useGetFuncWrite(
     "cancel",
-    {
-      enabled: isEnabled,
-    }
+    activeChain,
+    contractAddress,
+    contractABI,
+    isEnabled
   );
-  const { status: statusCancelWait } = useWaitForTransaction({
-    hash: dataCancel?.hash,
-    wait: dataCancel?.wait,
-    confirmations: numConfirmations,
-    enabled: isEnabled,
-  });
 
   // useEffect to setup values
   useEffect(() => {
@@ -227,8 +170,8 @@ const GetCampaign = ({
       statusCancel !== "loading" &&
       statusCancelWait !== "loading"
     ) {
-      if (value) setValue("0");
-      setDisabled(false);
+      if (disabled) setDisabled(false);
+      setInput({ value: "0" });
     }
     // eslint-disable-next-line
   }, [
@@ -244,30 +187,33 @@ const GetCampaign = ({
     statusCancelWait,
   ]);
 
-  if (
-    !isMounted ||
-    isLoadingCampaign ||
-    isLoadingpledgedAmount ||
-    !isSuccessCampaign ||
-    !isSuccesspledgedAmount
-  )
-    return <></>;
-
   const handleClosePledge = (event, reason) => {
     if (
       (reason && (reason === "backdropClick" || reason === "escapeKeyDown")) ||
       event.currentTarget.value === "cancel"
     ) {
-      if (value) setValue("0");
       setOpenPledge(false);
     } else {
-      if (parseInt(event.currentTarget.value) >= 0) {
-        setDisabled(true);
-        writePledge({
-          args: [parseInt(event.currentTarget.value), utils.parseEther(value)],
-        });
-        setOpenPledge(false);
-        if (value) setValue("0");
+      if (
+        event.target.value &&
+        event.target.value !== "" &&
+        parseInt(event.target.value) >= 0
+      ) {
+        if (
+          input.value &&
+          input.value !== "" &&
+          utils.parseEther(input.value) > 0
+        ) {
+          setDisabled(true);
+          writePledge({
+            args: [parseInt(event.target.value), utils.parseEther(input.value)],
+          });
+          setOpenPledge(false);
+        } else {
+          setIsErrorInput({ ...isErrorInput, value: true });
+        }
+      } else {
+        setIsErrorInput({ ...isErrorInput, value: true });
       }
     }
   };
@@ -276,16 +222,28 @@ const GetCampaign = ({
       (reason && (reason === "backdropClick" || reason === "escapeKeyDown")) ||
       event.currentTarget.value === "cancel"
     ) {
-      if (value) setValue("0");
       setOpenUnpledge(false);
     } else {
-      if (parseInt(event.currentTarget.value) >= 0) {
-        setDisabled(true);
-        writeUnpledge({
-          args: [parseInt(event.currentTarget.value), utils.parseEther(value)],
-        });
-        setOpenUnpledge(false);
-        if (value) setValue("0");
+      if (
+        event.target.value &&
+        event.target.value !== "" &&
+        parseInt(event.target.value) >= 0
+      ) {
+        if (
+          input.value &&
+          input.value !== "" &&
+          utils.parseEther(input.value) > 0
+        ) {
+          setDisabled(true);
+          writeUnpledge({
+            args: [parseInt(event.target.value), utils.parseEther(input.value)],
+          });
+          setOpenUnpledge(false);
+        } else {
+          setIsErrorInput({ ...isErrorInput, value: true });
+        }
+      } else {
+        setIsErrorInput({ ...isErrorInput, value: true });
       }
     }
   };
@@ -297,10 +255,14 @@ const GetCampaign = ({
     ) {
       setOpenClaim(false);
     } else {
-      if (parseInt(event.currentTarget.value) >= 0) {
+      if (
+        event.target.value &&
+        event.target.value !== "" &&
+        parseInt(event.target.value) >= 0
+      ) {
         setDisabled(true);
         writeClaim({
-          args: [parseInt(event.currentTarget.value)],
+          args: [parseInt(event.target.value)],
         });
         setOpenClaim(false);
       }
@@ -314,10 +276,14 @@ const GetCampaign = ({
     ) {
       setOpenRefund(false);
     } else {
-      if (parseInt(event.currentTarget.value) >= 0) {
+      if (
+        event.target.value &&
+        event.target.value !== "" &&
+        parseInt(event.target.value) >= 0
+      ) {
         setDisabled(true);
         writeRefund({
-          args: [parseInt(event.currentTarget.value)],
+          args: [parseInt(event.target.value)],
         });
         setOpenRefund(false);
       }
@@ -331,15 +297,33 @@ const GetCampaign = ({
     ) {
       setOpenCancel(false);
     } else {
-      if (parseInt(event.currentTarget.value) >= 0) {
+      if (
+        event.target.value &&
+        event.target.value !== "" &&
+        parseInt(event.target.value) >= 0
+      ) {
         setDisabled(true);
         writeCancel({
-          args: [parseInt(event.currentTarget.value)],
+          args: [parseInt(event.target.value)],
         });
         setOpenCancel(false);
       }
     }
   };
+  const handleValue = (e) => {
+    setInput({ ...input, value: e.target.value });
+    if (isErrorInput.value) setIsErrorInput({ ...isErrorInput, value: false });
+  };
+
+  if (
+    !isMounted ||
+    isLoadingCampaign ||
+    isLoadingpledgedAmount ||
+    !isSuccessCampaign ||
+    !isSuccesspledgedAmount
+  )
+    return <></>;
+
   const idxCampaignFormatted = idxCampaign.toString();
   const creator = campaign[0];
   const creatorFormatted = shortenAddress(creator);
@@ -352,7 +336,6 @@ const GetCampaign = ({
   const endAtFormatted = endAt.toLocaleString();
   const claimedFormatted = campaign[5].toString() === "false" ? "no" : "yes";
   const pledgedAmountFormatted = formatBalance(pledgedAmount, 0);
-  const dateNow = new Date().getTime() / 1000;
   return (
     <>
       <TableRow key={idxCampaign} hover={true}>
@@ -369,78 +352,76 @@ const GetCampaign = ({
             direction="column"
             justifyContent="flex-start"
             alignItems="flex-start"
-            spacing={0.5}
+            spacing={1}
             padding={0}
           >
             <Stack
               direction="row"
               justifyContent="flex-start"
               alignItems="flex-start"
-              spacing={0.5}
+              spacing={1}
               padding={0}
             >
-              {endAt > dateNow && (
-                <>
-                  <Button
-                    variant="contained"
+              <Button
+                variant="contained"
+                size="small"
+                value={idxCampaign}
+                disabled={disabled}
+                onClick={() => setOpenPledge(true)}
+                startIcon={<GetStatusIcon status={statusPledge} />}
+                endIcon={<GetStatusIcon status={statusPledgeWait} />}
+              >
+                pledge
+              </Button>
+              <Dialog open={openPledge} onClose={handleClosePledge}>
+                <DialogTitle>Pledge</DialogTitle>
+                <DialogContent>
+                  <DialogContentText>
+                    Enter the value to pledge for the campaign #{idxCampaign}
+                  </DialogContentText>
+                  <TextField
+                    error={isErrorInput.value}
+                    autoFocus
                     size="small"
-                    value={idxCampaign}
-                    disabled={disabled || isLoadingPledge}
-                    onClick={() => setOpenPledge(true)}
-                    endIcon={<GetStatusIcon status={statusPledge} />}
+                    margin="dense"
+                    id="value"
+                    label="Value to pledge"
+                    type="number"
+                    value={input.value}
+                    onChange={handleValue}
+                    fullWidth
+                    variant="standard"
+                  />
+                </DialogContent>
+                <DialogActions>
+                  <Button
+                    size="small"
+                    onClick={handleClosePledge}
+                    value="cancel"
                   >
-                    pledge
+                    Cancel
                   </Button>
-                  <Dialog open={openPledge} onClose={handleClosePledge}>
-                    <DialogTitle>Pledge</DialogTitle>
-                    <DialogContent>
-                      <DialogContentText>
-                        Enter the value to pledge for the campaign #
-                        {idxCampaign}
-                      </DialogContentText>
-                      <TextField
-                        autoFocus
-                        size="small"
-                        margin="dense"
-                        id="value"
-                        label="Value to pledge"
-                        type="number"
-                        value={value}
-                        onChange={(e) => setValue(e.target.value)}
-                        fullWidth
-                        variant="standard"
-                      />
-                    </DialogContent>
-                    <DialogActions>
-                      <Button
-                        size="small"
-                        onClick={handleClosePledge}
-                        value="cancel"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        size="small"
-                        onClick={handleClosePledge}
-                        value={`${idxCampaign}`}
-                      >
-                        Pledge
-                      </Button>
-                    </DialogActions>
-                  </Dialog>
-                </>
-              )}
+                  <Button
+                    size="small"
+                    onClick={handleClosePledge}
+                    value={`${idxCampaign}`}
+                  >
+                    Pledge
+                  </Button>
+                </DialogActions>
+              </Dialog>
 
               {/* // if creator===current account, we can claim */}
-              {creator === account?.address && (
+              {creator === account?.address && pledgedAmount > 0 && (
                 <>
                   <Button
                     variant="contained"
                     size="small"
                     value={idxCampaign}
-                    disabled={disabled || isLoadingClaim}
+                    disabled={disabled}
                     onClick={() => setOpenClaim(true)}
-                    endIcon={<GetStatusIcon status={statusClaim} />}
+                    startIcon={<GetStatusIcon status={statusClaim} />}
+                    endIcon={<GetStatusIcon status={statusClaimWait} />}
                   >
                     claim
                   </Button>
@@ -478,9 +459,10 @@ const GetCampaign = ({
                     variant="contained"
                     size="small"
                     value={idxCampaign}
-                    disabled={disabled || isLoadingCancel}
+                    disabled={disabled}
                     onClick={() => setOpenCancel(true)}
-                    endIcon={<GetStatusIcon status={statusCancel} />}
+                    startIcon={<GetStatusIcon status={statusCancel} />}
+                    endIcon={<GetStatusIcon status={statusCancelWait} />}
                   >
                     cancel
                   </Button>
@@ -525,9 +507,10 @@ const GetCampaign = ({
                     variant="contained"
                     size="small"
                     value={idxCampaign}
-                    disabled={disabled || isLoadingUnpledge}
+                    disabled={disabled}
                     onClick={() => setOpenUnpledge(true)}
-                    endIcon={<GetStatusIcon status={statusUnpledge} />}
+                    startIcon={<GetStatusIcon status={statusUnpledge} />}
+                    endIcon={<GetStatusIcon status={statusUnpledgeWait} />}
                   >
                     unpledge
                   </Button>
@@ -539,14 +522,15 @@ const GetCampaign = ({
                         {idxCampaign}
                       </DialogContentText>
                       <TextField
+                        error={isErrorInput.value}
                         autoFocus
                         size="small"
                         margin="dense"
                         id="value"
                         label="Value to unpledge"
                         type="number"
-                        value={value}
-                        onChange={(e) => setValue(e.target.value)}
+                        value={input.value}
+                        onChange={handleValue}
                         fullWidth
                         variant="standard"
                       />
@@ -568,18 +552,15 @@ const GetCampaign = ({
                       </Button>
                     </DialogActions>
                   </Dialog>
-                </>
-              )}
-              {/* // if pledgedAmount is >0, we can refund */}
-              {pledgedAmount > 0 && (
-                <>
+                  {/* // if pledgedAmount is >0, we can refund */}
                   <Button
                     variant="contained"
                     size="small"
                     value={idxCampaign}
-                    disabled={disabled || isLoadingRefund}
+                    disabled={disabled}
                     onClick={() => setOpenRefund(true)}
-                    endIcon={<GetStatusIcon status={statusRefund} />}
+                    startIcon={<GetStatusIcon status={statusRefund} />}
+                    endIcon={<GetStatusIcon status={statusRefundWait} />}
                   >
                     refund
                   </Button>
@@ -615,68 +596,60 @@ const GetCampaign = ({
           </Stack>
         </TableCell>
       </TableRow>
-      {(isErrorPledge ||
-        isErrorUnpledge ||
-        isErrorClaim ||
-        isErrorRefund ||
-        isErrorCancel) && (
-        <>
-          {isErrorPledge && (
-            <TableRow key={idxCampaign + 10000}>
-              <TableCell colSpan={9}>
-                <ShowError
-                  message="Pledge:"
-                  flag={isErrorPledge}
-                  error={errorPledge}
-                />
-              </TableCell>
-            </TableRow>
-          )}
-          {isErrorUnpledge && (
-            <TableRow key={idxCampaign + 10001}>
-              <TableCell colSpan={9}>
-                <ShowError
-                  message="Unpledge:"
-                  flag={isErrorUnpledge}
-                  error={errorUnpledge}
-                />
-              </TableCell>
-            </TableRow>
-          )}
-          {isErrorClaim && (
-            <TableRow key={idxCampaign + 10002}>
-              <TableCell colSpan={9}>
-                <ShowError
-                  message="Claim:"
-                  flag={isErrorClaim}
-                  error={errorClaim}
-                />
-              </TableCell>
-            </TableRow>
-          )}
-          {isErrorRefund && (
-            <TableRow key={idxCampaign + 10003}>
-              <TableCell colSpan={9}>
-                <ShowError
-                  message="Refund:"
-                  flag={isErrorRefund}
-                  error={errorRefund}
-                />
-              </TableCell>
-            </TableRow>
-          )}
-          {isErrorCancel && (
-            <TableRow key={idxCampaign + 10004}>
-              <TableCell colSpan={9}>
-                <ShowError
-                  message="Cancel:"
-                  flag={isErrorCancel}
-                  error={errorCancel}
-                />
-              </TableCell>
-            </TableRow>
-          )}
-        </>
+      {isErrorPledge && (
+        <TableRow key={idxCampaign + 10000}>
+          <TableCell colSpan={9}>
+            <ShowError
+              message="Pledge:"
+              flag={isErrorPledge}
+              error={errorPledge}
+            />
+          </TableCell>
+        </TableRow>
+      )}
+      {isErrorUnpledge && (
+        <TableRow key={idxCampaign + 10001}>
+          <TableCell colSpan={9}>
+            <ShowError
+              message="Unpledge:"
+              flag={isErrorUnpledge}
+              error={errorUnpledge}
+            />
+          </TableCell>
+        </TableRow>
+      )}
+      {isErrorClaim && (
+        <TableRow key={idxCampaign + 10002}>
+          <TableCell colSpan={9}>
+            <ShowError
+              message="Claim:"
+              flag={isErrorClaim}
+              error={errorClaim}
+            />
+          </TableCell>
+        </TableRow>
+      )}
+      {isErrorRefund && (
+        <TableRow key={idxCampaign + 10003}>
+          <TableCell colSpan={9}>
+            <ShowError
+              message="Refund:"
+              flag={isErrorRefund}
+              error={errorRefund}
+            />
+          </TableCell>
+        </TableRow>
+      )}
+      {isErrorCancel && (
+        <TableRow key={idxCampaign + 10004}>
+          <TableCell colSpan={9}>
+            <ShowError
+              message="Cancel:"
+              flag={isErrorCancel}
+              error={errorCancel}
+            />
+          </TableCell>
+        </TableRow>
       )}
     </>
   );
@@ -691,7 +664,6 @@ const CrowdFund = ({
   account,
 }) => {
   const isMounted = useIsMounted();
-  const numConfirmations = getNumConfirmations(activeChain);
   const isEnabled = Boolean(
     isMounted &&
       activeChain &&
@@ -702,6 +674,7 @@ const CrowdFund = ({
   const {
     data: balanceAccount,
     isSuccess: isSuccessBalanceAccount,
+    isLoading: isLoadingBalanceAccount,
     isError: isErrorBalanceAccount,
     error: errorBalanceAccount,
   } = useBalance({
@@ -713,6 +686,7 @@ const CrowdFund = ({
   const {
     data: balanceToken,
     isSuccess: isSuccessBalanceToken,
+    isLoading: isLoadingBalanceToken,
     isError: isErrorBalanceToken,
     error: errorBalanceToken,
   } = useBalance({
@@ -726,6 +700,7 @@ const CrowdFund = ({
     data: campaignCount,
     error: errorCampaignCount,
     isError: isErrorCampaignCount,
+    isLoading: isLoadingCount,
   } = useContractRead(
     {
       addressOrName: contractAddress,
@@ -738,7 +713,13 @@ const CrowdFund = ({
     }
   );
 
-  if (!isMounted) return <></>;
+  if (
+    !isMounted ||
+    isLoadingCount ||
+    isLoadingBalanceAccount ||
+    isLoadingBalanceToken
+  )
+    return <></>;
 
   const campaignsArray = [
     ...Array.from({ length: parseInt(campaignCount) }, (_, idx) => `${++idx}`),
@@ -754,7 +735,7 @@ const CrowdFund = ({
         padding={1}
       >
         <Typography variant="h6" gutterBottom component="div">
-          Crowfund ({contractAddress})
+          Crowdfund ({contractAddress})
         </Typography>
         {account && isSuccessBalanceAccount && isSuccessBalanceToken && (
           <Typography>
@@ -788,7 +769,6 @@ const CrowdFund = ({
                     contractABI={contractABI}
                     activeChain={activeChain}
                     account={account}
-                    numConfirmations={numConfirmations}
                   />
                 );
               })}
@@ -796,24 +776,26 @@ const CrowdFund = ({
           </Table>
         </TableContainer>
       </Stack>
-      {isErrorBalanceAccount && isErrorBalanceToken && isErrorCampaignCount && (
-        <>
-          <ShowError
-            message="Balance Account:"
-            flag={isErrorBalanceAccount}
-            error={errorBalanceAccount}
-          />
-          <ShowError
-            message="Balance Token:"
-            flag={isErrorBalanceToken}
-            error={errorBalanceToken}
-          />
-          <ShowError
-            message="Campaign Count:"
-            flag={isErrorCampaignCount}
-            error={errorCampaignCount}
-          />
-        </>
+      {isErrorBalanceAccount && (
+        <ShowError
+          message="Balance Account:"
+          flag={isErrorBalanceAccount}
+          error={errorBalanceAccount}
+        />
+      )}
+      {isErrorBalanceToken && (
+        <ShowError
+          message="Balance Token:"
+          flag={isErrorBalanceToken}
+          error={errorBalanceToken}
+        />
+      )}
+      {isErrorCampaignCount && (
+        <ShowError
+          message="Campaign Count:"
+          flag={isErrorCampaignCount}
+          error={errorCampaignCount}
+        />
       )}
     </Paper>
   );

@@ -17,7 +17,6 @@ const CrowdfundContainer = () => {
     error: errorAccount,
     isError: isErrorAccount,
     isLoading: isLoadingAccount,
-    isSuccess: isSuccessAccount,
   } = useAccount({
     enabled: Boolean(
       isMounted && activeChain && addressNotZero(contractAddress)

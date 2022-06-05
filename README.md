@@ -81,7 +81,7 @@ Enter your Alchemy API key:
 
 ```.env
 GENERATE_SOURCEMAP=false
-ALCHEMY_ID="abcdefgh"
+REACT_APP_ALCHEMY_ID="your-api-key"
 ```
 
 ## 6. Start your front end

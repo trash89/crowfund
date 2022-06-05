@@ -5,31 +5,24 @@ import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import { utils, constants } from "ethers";
-import {
-  useContractRead,
-  useContractWrite,
-  useWaitForTransaction,
-} from "wagmi";
-
-import {
-  addressNotZero,
-  shortenAddress,
-  formatBalance,
-  getNumConfirmations,
-} from "../utils/utils";
-import { useIsMounted, useTokenDetails } from "../hooks";
+import { useContractRead } from "wagmi";
+import { addressNotZero, shortenAddress, formatBalance } from "../utils/utils";
+import { useIsMounted, useTokenDetails, useGetFuncWrite } from "../hooks";
 import { GetStatusIcon, ShowError } from ".";
 
 const CrowdToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
   const isMounted = useIsMounted();
   const [disabled, setDisabled] = useState(false);
-  const [inputAddress, setInputAddress] = useState("");
-  const [transferFrom, setTransferFrom] = useState("");
-  const [inputValue, setInputValue] = useState("0");
-  const numConfirmations = getNumConfirmations(activeChain);
+
   const isEnabled = Boolean(
     isMounted && activeChain && account && addressNotZero(tokenAddress)
   );
+  const [input, setInput] = useState({ to: "", from: "", value: "0" });
+  const [isErrorInput, setIsErrorInput] = useState({
+    to: false,
+    from: false,
+    value: false,
+  });
 
   // token details for display
   const {
@@ -47,6 +40,7 @@ const CrowdToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
       else return constants.AddressZero;
     } else return account?.address;
   };
+
   const {
     data: allowanceOther,
     error: errorAllowanceOther,
@@ -58,237 +52,135 @@ const CrowdToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
     },
     "allowance",
     {
-      args: [verifyAddress(transferFrom), account?.address],
-      enabled: Boolean(isEnabled && verifyAddress(transferFrom)),
-      watch: Boolean(isEnabled && verifyAddress(transferFrom)),
+      args: [verifyAddress(input.from), account?.address],
+      enabled: Boolean(isEnabled && verifyAddress(input.from)),
+      watch: Boolean(isEnabled && verifyAddress(input.from)),
     }
   );
 
   // mint function
   const {
-    data: dataMint,
     error: errorMint,
     isError: isErrorMint,
-    isLoading: isLoadingMint,
     write: writeMint,
     status: statusMint,
-  } = useContractWrite(
-    {
-      addressOrName: tokenAddress,
-      contractInterface: tokenABI,
-    },
-    "mint",
-    {
-      enabled: isEnabled,
-    }
-  );
-  const { status: statusMintWait } = useWaitForTransaction({
-    hash: dataMint?.hash,
-    wait: dataMint?.wait,
-    confirmations: numConfirmations,
-    enabled: isEnabled,
-  });
+    statusWait: statusMintWait,
+  } = useGetFuncWrite("mint", activeChain, tokenAddress, tokenABI, isEnabled);
+
   // burnFrom function
   const {
-    data: dataBurnFrom,
     error: errorBurnFrom,
     isError: isErrorBurnFrom,
-    isLoading: isLoadingBurnFrom,
     write: writeBurnFrom,
     status: statusBurnFrom,
-  } = useContractWrite(
-    {
-      addressOrName: tokenAddress,
-      contractInterface: tokenABI,
-    },
+    statusWait: statusBurnFromWait,
+  } = useGetFuncWrite(
     "burnFrom",
-    {
-      enabled: isEnabled,
-    }
+    activeChain,
+    tokenAddress,
+    tokenABI,
+    isEnabled
   );
-  const { status: statusBurnFromWait } = useWaitForTransaction({
-    hash: dataBurnFrom?.hash,
-    wait: dataBurnFrom?.wait,
-    confirmations: numConfirmations,
-    enabled: isEnabled,
-  });
 
   // burn function
 
   const {
-    data: dataBurn,
     error: errorBurn,
     isError: isErrorBurn,
-    isLoading: isLoadingBurn,
     write: writeBurn,
     status: statusBurn,
-  } = useContractWrite(
-    {
-      addressOrName: tokenAddress,
-      contractInterface: tokenABI,
-    },
-    "burn",
-    {
-      enabled: isEnabled,
-    }
-  );
-  const { status: statusBurnWait } = useWaitForTransaction({
-    hash: dataBurn?.hash,
-    wait: dataBurn?.wait,
-    confirmations: numConfirmations,
-    enabled: isEnabled,
-  });
+    statusWait: statusBurnWait,
+  } = useGetFuncWrite("burn", activeChain, tokenAddress, tokenABI, isEnabled);
 
   // increaseAllowance(spender, value)
   const {
-    data: dataIncreaseAllowance,
     error: errorIncreaseAllowance,
     isError: isErrorIncreaseAllowance,
-    isLoading: isLoadingIncreaseAllowance,
     write: writeIncreaseAllowance,
     status: statusIncreaseAllowance,
-  } = useContractWrite(
-    {
-      addressOrName: tokenAddress,
-      contractInterface: tokenABI,
-    },
+    statusWait: statusIncreaseAllowanceWait,
+  } = useGetFuncWrite(
     "increaseAllowance",
-    {
-      enabled: isEnabled,
-    }
+    activeChain,
+    tokenAddress,
+    tokenABI,
+    isEnabled
   );
-  const { status: statusIncreaseAllowanceWait } = useWaitForTransaction({
-    hash: dataIncreaseAllowance?.hash,
-    wait: dataIncreaseAllowance?.wait,
-    confirmations: numConfirmations,
-    enabled: isEnabled,
-  });
 
   // decreaseAllowance(spender, value);
   const {
-    data: dataDecreaseAllowance,
     error: errorDecreaseAllowance,
     isError: isErrorDecreaseAllowance,
-    isLoading: isLoadingDecreaseAllowance,
     write: writeDecreaseAllowance,
     status: statusDecreaseAllowance,
-  } = useContractWrite(
-    {
-      addressOrName: tokenAddress,
-      contractInterface: tokenABI,
-    },
+    statusWait: statusDecreaseAllowanceWait,
+  } = useGetFuncWrite(
     "decreaseAllowance",
-    {
-      enabled: isEnabled,
-    }
+    activeChain,
+    tokenAddress,
+    tokenABI,
+    isEnabled
   );
-  const { status: statusDecreaseAllowanceWait } = useWaitForTransaction({
-    hash: dataDecreaseAllowance?.hash,
-    wait: dataDecreaseAllowance?.wait,
-    confirmations: numConfirmations,
-    enabled: isEnabled,
-  });
 
   // transfer(to, amount);
-
   const {
-    data: dataTransfer,
     error: errorTransfer,
     isError: isErrorTransfer,
-    isLoading: isLoadingTransfer,
     write: writeTransfer,
     status: statusTransfer,
-  } = useContractWrite(
-    {
-      addressOrName: tokenAddress,
-      contractInterface: tokenABI,
-    },
+    statusWait: statusTransferWait,
+  } = useGetFuncWrite(
     "transfer",
-    {
-      enabled: isEnabled,
-    }
+    activeChain,
+    tokenAddress,
+    tokenABI,
+    isEnabled
   );
-  const { status: statusTransferWait } = useWaitForTransaction({
-    hash: dataTransfer?.hash,
-    wait: dataTransfer?.wait,
-    confirmations: numConfirmations,
-    enabled: isEnabled,
-  });
 
   // approve(spender, amount);
   const {
-    data: dataApprove,
     error: errorApprove,
     isError: isErrorApprove,
-    isLoading: isLoadingApprove,
     write: writeApprove,
     status: statusApprove,
-  } = useContractWrite(
-    {
-      addressOrName: tokenAddress,
-      contractInterface: tokenABI,
-    },
+    statusWait: statusApproveWait,
+  } = useGetFuncWrite(
     "approve",
-    {
-      enabled: isEnabled,
-    }
+    activeChain,
+    tokenAddress,
+    tokenABI,
+    isEnabled
   );
-  const { status: statusApproveWait } = useWaitForTransaction({
-    hash: dataApprove?.hash,
-    wait: dataApprove?.wait,
-    confirmations: numConfirmations,
-    enabled: isEnabled,
-  });
 
   // transferOwnership(address newOwner)
   const {
-    data: dataTransferOwnership,
     error: errorTransferOwnership,
     isError: isErrorTransferOwnership,
-    isLoading: isLoadingTransferOwnership,
     write: writeTransferOwnership,
     status: statusTransferOwnership,
-  } = useContractWrite(
-    {
-      addressOrName: tokenAddress,
-      contractInterface: tokenABI,
-    },
+    statusWait: statusTransferOwnershipWait,
+  } = useGetFuncWrite(
     "transferOwnership",
-    {
-      enabled: isEnabled,
-    }
+    activeChain,
+    tokenAddress,
+    tokenABI,
+    isEnabled
   );
-  const { status: statusTransferOwnershipWait } = useWaitForTransaction({
-    hash: dataTransferOwnership?.hash,
-    wait: dataTransferOwnership?.wait,
-    confirmations: numConfirmations,
-    enabled: isEnabled,
-  });
 
   // transferFrom(address from, address to, uint256 amount)
   const {
-    data: dataTransferFrom,
     error: errorTransferFrom,
     isError: isErrorTransferFrom,
-    isLoading: isLoadingTransferFrom,
     write: writeTransferFrom,
     status: statusTransferFrom,
-  } = useContractWrite(
-    {
-      addressOrName: tokenAddress,
-      contractInterface: tokenABI,
-    },
+    statusWait: statusTransferFromWait,
+  } = useGetFuncWrite(
     "transferFrom",
-    {
-      enabled: isEnabled,
-    }
+    activeChain,
+    tokenAddress,
+    tokenABI,
+    isEnabled
   );
-  const { status: statusTransferFromWait } = useWaitForTransaction({
-    hash: dataTransferFrom?.hash,
-    wait: dataTransferFrom?.wait,
-    confirmations: numConfirmations,
-    enabled: isEnabled,
-  });
 
   // useEffect to setup values
   useEffect(() => {
@@ -312,10 +204,8 @@ const CrowdToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
       statusTransferOwnershipWait !== "loading" &&
       statusTransferFromWait !== "loading"
     ) {
-      setDisabled(false);
-      setInputValue("0");
-      setInputAddress("");
-      setTransferFrom("");
+      if (disabled) setDisabled(false);
+      setInput({ to: "", from: "", value: "0" });
       refetchToken();
     }
     // eslint-disable-next-line
@@ -340,151 +230,185 @@ const CrowdToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
     statusTransferFromWait,
   ]);
 
-  if (!isMounted) return <></>;
-
   // handleMint
   const handleMint = (e) => {
     e.preventDefault();
-    if (inputValue && utils.parseEther(inputValue) > 0) {
-      if (inputAddress && utils.isAddress(inputAddress)) {
+    if (input.value && utils.parseEther(input.value) > 0) {
+      if (input.to && utils.isAddress(input.to)) {
         setDisabled(true);
         writeMint({
-          args: [utils.getAddress(inputAddress), utils.parseEther(inputValue)],
+          args: [utils.getAddress(input.to), utils.parseEther(input.value)],
         });
       } else {
         setDisabled(true);
         writeMint({
           args: [
             utils.getAddress(account?.address),
-            utils.parseEther(inputValue),
+            utils.parseEther(input.value),
           ],
         });
       }
+    } else {
+      setIsErrorInput({ ...isErrorInput, value: true });
     }
   };
 
   // handleBurn and burnFrom
   const handleBurn = (e) => {
     e.preventDefault();
-    if (inputValue && utils.parseEther(inputValue) > 0) {
-      if (inputAddress && utils.isAddress(inputAddress)) {
+    if (input.value && utils.parseEther(input.value) > 0) {
+      if (input.to && utils.isAddress(input.to)) {
         setDisabled(true);
         writeBurnFrom({
-          args: [utils.getAddress(inputAddress), utils.parseEther(inputValue)],
+          args: [utils.getAddress(input.to), utils.parseEther(input.value)],
         });
       } else {
         setDisabled(true);
         writeBurn({
-          args: [utils.parseEther(inputValue)],
+          args: [utils.parseEther(input.value)],
         });
       }
+    } else {
+      setIsErrorInput({ ...isErrorInput, value: true });
     }
   };
 
   // handleIncreaseAllowance
   const handleIncreaseAllowance = (e) => {
     e.preventDefault();
-    if (inputValue && utils.parseEther(inputValue) > 0) {
-      if (inputAddress && utils.isAddress(inputAddress)) {
+    if (input.value && utils.parseEther(input.value) > 0) {
+      if (input.to && utils.isAddress(input.to)) {
         setDisabled(true);
         writeIncreaseAllowance({
-          args: [utils.getAddress(inputAddress), utils.parseEther(inputValue)],
+          args: [utils.getAddress(input.to), utils.parseEther(input.value)],
         });
       } else {
         setDisabled(true);
         writeIncreaseAllowance({
           args: [
             utils.getAddress(account?.address),
-            utils.parseEther(inputValue),
+            utils.parseEther(input.value),
           ],
         });
       }
+    } else {
+      setIsErrorInput({ ...isErrorInput, value: true });
     }
   };
 
   // handleDecreaseAllowance
   const handleDecreaseAllowance = (e) => {
     e.preventDefault();
-    if (inputValue && utils.parseEther(inputValue) > 0) {
-      if (inputAddress && utils.isAddress(inputAddress)) {
+    if (input.value && utils.parseEther(input.value) > 0) {
+      if (input.to && utils.isAddress(input.to)) {
         setDisabled(true);
         writeDecreaseAllowance({
-          args: [utils.getAddress(inputAddress), utils.parseEther(inputValue)],
+          args: [utils.getAddress(input.to), utils.parseEther(input.value)],
         });
       } else {
         setDisabled(true);
         writeDecreaseAllowance({
           args: [
             utils.getAddress(account?.address),
-            utils.parseEther(inputValue),
+            utils.parseEther(input.value),
           ],
         });
       }
+    } else {
+      setIsErrorInput({ ...isErrorInput, value: true });
     }
   };
 
   // handleApprove
   const handleApprove = (e) => {
     e.preventDefault();
-    if (inputValue && utils.parseEther(inputValue) > 0) {
-      if (inputAddress && utils.isAddress(inputAddress)) {
+    if (input.value && utils.parseEther(input.value) > 0) {
+      if (input.to && utils.isAddress(input.to)) {
+        const formattedAddress = utils.getAddress(input.to);
         setDisabled(true);
         writeApprove({
-          args: [utils.getAddress(inputAddress), utils.parseEther("0")],
+          args: [formattedAddress, utils.parseEther("0")],
         });
-
         writeApprove({
-          args: [utils.getAddress(inputAddress), utils.parseEther(inputValue)],
+          args: [formattedAddress, utils.parseEther(input.value)],
         });
+      } else {
+        setIsErrorInput({ ...isErrorInput, to: true });
       }
+    } else {
+      setIsErrorInput({ ...isErrorInput, value: true });
     }
   };
 
   // handleTransfer
   const handleTransfer = (e) => {
     e.preventDefault();
-    if (inputValue && utils.parseEther(inputValue) >= 0) {
-      if (inputAddress && utils.isAddress(inputAddress)) {
+    if (input.value && utils.parseEther(input.value) >= 0) {
+      if (input.to && utils.isAddress(input.to)) {
         setDisabled(true);
         writeTransfer({
-          args: [utils.getAddress(inputAddress), utils.parseEther(inputValue)],
+          args: [utils.getAddress(input.to), utils.parseEther(input.value)],
         });
+      } else {
+        setIsErrorInput({ ...isErrorInput, to: true });
       }
+    } else {
+      setIsErrorInput({ ...isErrorInput, value: true });
     }
   };
 
   // handleTransferOwnership
   const handleTransferOwnership = (e) => {
     e.preventDefault();
-    if (inputAddress && utils.isAddress(inputAddress)) {
+    if (input.to && utils.isAddress(input.to)) {
       setDisabled(true);
       writeTransferOwnership({
-        args: [utils.getAddress(inputAddress)],
+        args: [utils.getAddress(input.to)],
       });
+    } else {
+      setIsErrorInput({ ...isErrorInput, to: true });
     }
   };
 
   // handleTransferFrom
   const handleTransferFrom = (e) => {
     e.preventDefault();
-    if (inputValue && utils.parseEther(inputValue) >= 0) {
+    if (input.value && utils.parseEther(input.value) >= 0) {
       if (
-        inputAddress &&
-        utils.isAddress(inputAddress) &&
-        transferFrom &&
-        utils.isAddress(transferFrom)
+        input.to &&
+        utils.isAddress(input.to) &&
+        input.from &&
+        utils.isAddress(input.from)
       ) {
         setDisabled(true);
         writeTransferFrom({
           args: [
-            utils.getAddress(transferFrom),
-            utils.getAddress(inputAddress),
-            utils.parseEther(inputValue),
+            utils.getAddress(input.from),
+            utils.getAddress(input.to),
+            utils.parseEther(input.value),
           ],
         });
+      } else {
+        setIsErrorInput({ ...isErrorInput, to: true, from: true });
       }
+    } else {
+      setIsErrorInput({ ...isErrorInput, value: true });
     }
   };
+  const handleInputTo = (e) => {
+    setInput({ ...input, to: e.target.value });
+    if (isErrorInput.to) setIsErrorInput({ ...isErrorInput, to: false });
+  };
+  const handleInputFrom = (e) => {
+    setInput({ ...input, from: e.target.value });
+    if (isErrorInput.from) setIsErrorInput({ ...isErrorInput, from: false });
+  };
+  const handleInputValue = (e) => {
+    setInput({ ...input, value: e.target.value });
+    if (isErrorInput.value) setIsErrorInput({ ...isErrorInput, value: false });
+  };
+
+  if (!isMounted) return <></>;
 
   return (
     <Paper elevation={4}>
@@ -492,11 +416,11 @@ const CrowdToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
         direction="column"
         justifyContent="flex-start"
         alignItems="flex-start"
-        spacing={1}
+        spacing={0}
         padding={1}
       >
         <Typography variant="h6" gutterBottom component="div">
-          CrowToken
+          CrowdToken
         </Typography>
         <Typography>
           Owner:{" "}
@@ -510,7 +434,7 @@ const CrowdToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
         direction="column"
         justifyContent="flex-start"
         alignItems="flex-start"
-        spacing={1}
+        spacing={0}
         padding={1}
       >
         <Typography color={isOwner ? "blue" : "text.primary"}>
@@ -524,47 +448,51 @@ const CrowdToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
           {token?.symbol}
         </Typography>
         <Typography>
-          Allowance from {shortenAddress(verifyAddress(transferFrom))}:{" "}
+          Allowance from {shortenAddress(verifyAddress(input.from))}:{" "}
           {formatBalance(allowanceOther, 0)} {token?.symbol}
         </Typography>
         <TextField
+          error={isErrorInput.to}
           autoFocus
           fullWidth
           helperText="Please enter a valid ETH address"
           variant="standard"
           type="text"
-          margin="normal"
+          margin="dense"
           label="Address To? (empty if owner)"
           size="small"
-          value={inputAddress}
-          onChange={(e) => setInputAddress(e.target.value)}
+          value={input.to}
+          onChange={handleInputTo}
           disabled={disabled}
         />
         <TextField
+          error={isErrorInput.from}
           fullWidth
           helperText="Please enter a valid ETH address"
           variant="standard"
           type="text"
-          margin="normal"
+          margin="dense"
           label="Address From? (empty if owner)"
           size="small"
-          value={transferFrom}
-          onChange={(e) => setTransferFrom(e.target.value)}
+          value={input.from}
+          onChange={handleInputFrom}
           disabled={disabled}
         />
         <TextField
+          error={isErrorInput.value}
           helperText="How many tokens?"
           variant="standard"
           type="number"
           required
-          margin="normal"
+          margin="dense"
           label="Amount"
           size="small"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          value={input.value}
+          onChange={handleInputValue}
           disabled={disabled}
         />
       </Stack>
+
       <Stack
         direction="row"
         justifyContent="flex-start"
@@ -577,8 +505,9 @@ const CrowdToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
             variant="contained"
             size="small"
             onClick={handleMint}
-            disabled={disabled || isLoadingMint}
-            endIcon={<GetStatusIcon status={statusMint} />}
+            disabled={disabled}
+            startIcon={<GetStatusIcon status={statusMint} />}
+            endIcon={<GetStatusIcon status={statusMintWait} />}
           >
             Mint
           </Button>
@@ -587,8 +516,9 @@ const CrowdToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
           variant="contained"
           size="small"
           onClick={handleBurn}
-          disabled={disabled || isLoadingBurn || isLoadingBurnFrom}
-          endIcon={<GetStatusIcon status={statusBurn} />}
+          disabled={disabled}
+          startIcon={<GetStatusIcon status={statusBurn} />}
+          endIcon={<GetStatusIcon status={statusBurnWait} />}
         >
           Burn
         </Button>
@@ -597,8 +527,9 @@ const CrowdToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
             variant="contained"
             size="small"
             onClick={handleTransferOwnership}
-            disabled={disabled || isLoadingTransferOwnership}
-            endIcon={<GetStatusIcon status={statusTransferOwnership} />}
+            disabled={disabled}
+            startIcon={<GetStatusIcon status={statusTransferOwnership} />}
+            endIcon={<GetStatusIcon status={statusTransferOwnershipWait} />}
           >
             Transfer Ownership
           </Button>
@@ -616,8 +547,9 @@ const CrowdToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
           variant="contained"
           size="small"
           onClick={handleIncreaseAllowance}
-          disabled={disabled || isLoadingIncreaseAllowance}
-          endIcon={<GetStatusIcon status={statusIncreaseAllowance} />}
+          disabled={disabled}
+          startIcon={<GetStatusIcon status={statusIncreaseAllowance} />}
+          endIcon={<GetStatusIcon status={statusIncreaseAllowanceWait} />}
         >
           Increase Allowance
         </Button>
@@ -625,8 +557,9 @@ const CrowdToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
           variant="contained"
           size="small"
           onClick={handleDecreaseAllowance}
-          disabled={disabled || isLoadingDecreaseAllowance}
-          endIcon={<GetStatusIcon status={statusDecreaseAllowance} />}
+          disabled={disabled}
+          startIcon={<GetStatusIcon status={statusDecreaseAllowance} />}
+          endIcon={<GetStatusIcon status={statusDecreaseAllowanceWait} />}
         >
           Decrease Allowance
         </Button>
@@ -643,8 +576,9 @@ const CrowdToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
           variant="contained"
           size="small"
           onClick={handleApprove}
-          disabled={disabled || isLoadingApprove}
-          endIcon={<GetStatusIcon status={statusApprove} />}
+          disabled={disabled}
+          startIcon={<GetStatusIcon status={statusApprove} />}
+          endIcon={<GetStatusIcon status={statusApproveWait} />}
         >
           Approve
         </Button>
@@ -652,8 +586,9 @@ const CrowdToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
           variant="contained"
           size="small"
           onClick={handleTransfer}
-          disabled={disabled || isLoadingTransfer}
-          endIcon={<GetStatusIcon status={statusTransfer} />}
+          disabled={disabled}
+          startIcon={<GetStatusIcon status={statusTransfer} />}
+          endIcon={<GetStatusIcon status={statusTransferWait} />}
         >
           Transfer
         </Button>
@@ -661,66 +596,74 @@ const CrowdToken = ({ activeChain, tokenAddress, tokenABI, account }) => {
           variant="contained"
           size="small"
           onClick={handleTransferFrom}
-          disabled={disabled || isLoadingTransferFrom}
-          endIcon={<GetStatusIcon status={statusTransferFrom} />}
+          disabled={disabled}
+          startIcon={<GetStatusIcon status={statusTransferFrom} />}
+          endIcon={<GetStatusIcon status={statusTransferFromWait} />}
         >
           Transfer From
         </Button>
       </Stack>
-      {(isErrorMint ||
-        isErrorBurn ||
-        isErrorBurnFrom ||
-        isErrorIncreaseAllowance ||
-        isErrorDecreaseAllowance ||
-        isErrorTransfer ||
-        isErrorApprove ||
-        isErrorTransferOwnership ||
-        isErrorAllowanceOther ||
-        isErrorTransferFrom) && (
-        <>
-          <ShowError
-            message="Allowance Other:"
-            flag={isErrorAllowanceOther}
-            error={errorAllowanceOther}
-          />
-          <ShowError message="Mint:" flag={isErrorMint} error={errorMint} />
-          <ShowError message="Burn:" flag={isErrorBurn} error={errorBurn} />
-          <ShowError
-            message="BurnFrom:"
-            flag={isErrorBurnFrom}
-            error={errorBurnFrom}
-          />
-          <ShowError
-            message="Increase Allowance:"
-            flag={isErrorIncreaseAllowance}
-            error={errorIncreaseAllowance}
-          />
-          <ShowError
-            message="Decrease Allowance:"
-            flag={isErrorDecreaseAllowance}
-            error={errorDecreaseAllowance}
-          />
-          <ShowError
-            message="Transfer:"
-            flag={isErrorTransfer}
-            error={errorTransfer}
-          />
-          <ShowError
-            message="Approve:"
-            flag={isErrorApprove}
-            error={errorApprove}
-          />
-          <ShowError
-            message="Transfer Ownership:"
-            flag={isErrorTransferOwnership}
-            error={errorTransferOwnership}
-          />
-          <ShowError
-            message="Transfer From:"
-            flag={isErrorTransferFrom}
-            error={errorTransferFrom}
-          />
-        </>
+      {isErrorMint && (
+        <ShowError message="Mint:" flag={isErrorMint} error={errorMint} />
+      )}
+      {isErrorBurn && (
+        <ShowError message="Burn:" flag={isErrorBurn} error={errorBurn} />
+      )}
+      {isErrorBurnFrom && (
+        <ShowError
+          message="BurnFrom:"
+          flag={isErrorBurnFrom}
+          error={errorBurnFrom}
+        />
+      )}
+      {isErrorIncreaseAllowance && (
+        <ShowError
+          message="Increase Allowance:"
+          flag={isErrorIncreaseAllowance}
+          error={errorIncreaseAllowance}
+        />
+      )}
+      {isErrorDecreaseAllowance && (
+        <ShowError
+          message="Decrease Allowance:"
+          flag={isErrorDecreaseAllowance}
+          error={errorDecreaseAllowance}
+        />
+      )}
+      {isErrorAllowanceOther && (
+        <ShowError
+          message="Allowance Other:"
+          flag={isErrorAllowanceOther}
+          error={errorAllowanceOther}
+        />
+      )}
+      {isErrorTransfer && (
+        <ShowError
+          message="Transfer:"
+          flag={isErrorTransfer}
+          error={errorTransfer}
+        />
+      )}
+      {isErrorTransferFrom && (
+        <ShowError
+          message="Transfer From:"
+          flag={isErrorTransferFrom}
+          error={errorTransferFrom}
+        />
+      )}
+      {isErrorApprove && (
+        <ShowError
+          message="Approve:"
+          flag={isErrorApprove}
+          error={errorApprove}
+        />
+      )}
+      {isErrorTransferOwnership && (
+        <ShowError
+          message="Transfer Ownership:"
+          flag={isErrorTransferOwnership}
+          error={errorTransferOwnership}
+        />
       )}
     </Paper>
   );

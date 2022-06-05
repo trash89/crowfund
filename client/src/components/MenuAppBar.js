@@ -43,7 +43,7 @@ const MenuAppBar = () => {
             to="/crowdtoken"
             className={({ isActive }) => (isActive ? "link active" : "link")}
           >
-            CrowToken
+            CrowdToken
           </NavLink>
 
           <ConnectButton

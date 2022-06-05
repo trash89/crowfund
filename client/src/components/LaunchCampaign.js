@@ -6,10 +6,9 @@ import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import { GetStatusIcon, ShowError } from "../components";
 
-import { useIsMounted } from "../hooks";
-import { addressNotZero, getNumConfirmations } from "../utils/utils";
+import { useIsMounted, useGetFuncWrite } from "../hooks";
+import { addressNotZero } from "../utils/utils";
 import { utils } from "ethers";
-import { useContractWrite, useWaitForTransaction } from "wagmi";
 
 const LaunchCampaign = ({
   activeChain,
@@ -22,63 +21,89 @@ const LaunchCampaign = ({
   const isEnabled = Boolean(
     isMounted && activeChain && account && addressNotZero(contractAddress)
   );
-  const numConfirmations = getNumConfirmations(activeChain);
-  const [goal, setGoal] = useState("0");
-  const [startAt, setStartAt] = useState("");
-  const [endAt, setEndAt] = useState("");
-  const [isErrorHandle, setIsErrorHandle] = useState(false);
-  const [errorHandle, setErrorHandle] = useState({ reason: "" });
+  const [input, setInput] = useState({ goal: "0", startAt: "", endAt: "" });
+  const [isErrorInput, setIsErrorInput] = useState({
+    goal: false,
+    startAt: false,
+    endAt: false,
+  });
 
   // launch function
   const {
-    data: dataLaunch,
     error: errorLaunch,
     isError: isErrorLaunch,
-    isLoading: isLoadingLaunch,
     write: writeLaunch,
     status: statusLaunch,
-  } = useContractWrite(
-    {
-      addressOrName: contractAddress,
-      contractInterface: contractABI,
-    },
+    statusWait: statusLaunchWait,
+  } = useGetFuncWrite(
     "launch",
-    {
-      enabled: isEnabled,
-    }
+    activeChain,
+    contractAddress,
+    contractABI,
+    isEnabled
   );
-  const { status: statusLaunchWait } = useWaitForTransaction({
-    hash: dataLaunch?.hash,
-    wait: dataLaunch?.wait,
-    confirmations: numConfirmations,
-    enabled: isEnabled,
-  });
 
   const handleLaunch = (e) => {
     e.preventDefault();
-    if (goal && utils.parseEther(goal) > 0 && startAt && endAt) {
-      const startAtParsed = new Date(startAt).getTime() / 1000;
-      const endAtParsed = new Date(endAt).getTime() / 1000;
-      if (startAtParsed < endAtParsed) {
-        setDisabled(true);
-        writeLaunch({
-          args: [utils.parseEther(goal), startAtParsed, endAtParsed],
-        });
+    if (input.goal && parseFloat(input.goal) > 0) {
+      if (input.startAt && input.startAt !== "") {
+        try {
+          const startAtParsed = new Date(input.startAt).getTime() / 1000;
+          if (input.endAt && input.endAt !== "") {
+            try {
+              const endAtParsed = new Date(input.endAt).getTime() / 1000;
+              if (startAtParsed < endAtParsed) {
+                setDisabled(true);
+                writeLaunch({
+                  args: [
+                    utils.parseEther(input.goal),
+                    startAtParsed,
+                    endAtParsed,
+                  ],
+                });
+              } else {
+                setIsErrorInput({
+                  ...isErrorInput,
+                  startAt: true,
+                  endAt: true,
+                });
+              }
+            } catch (error) {
+              setIsErrorInput({ ...isErrorInput, endAt: true });
+            }
+          } else {
+            setIsErrorInput({ ...isErrorInput, endAt: true });
+          }
+        } catch (error) {
+          setIsErrorInput({ ...isErrorInput, startAt: true });
+        }
+      } else {
+        setIsErrorInput({ ...isErrorInput, startAt: true });
       }
     } else {
-      setIsErrorHandle(true);
-      setErrorHandle({ reason: "Please enter all correct values" });
+      setIsErrorInput({ ...isErrorInput, goal: true });
     }
   };
+
+  const handleGoal = (e) => {
+    setInput({ ...input, goal: e.target.value });
+    if (isErrorInput.goal) setIsErrorInput({ ...isErrorInput, goal: false });
+  };
+  const handleStartAt = (e) => {
+    setInput({ ...input, startAt: e.target.value });
+    if (isErrorInput.startAt)
+      setIsErrorInput({ ...isErrorInput, startAt: false });
+  };
+  const handleEndAt = (e) => {
+    setInput({ ...input, endAt: e.target.value });
+    if (isErrorInput.endAt) setIsErrorInput({ ...isErrorInput, endAt: false });
+  };
+
   // useEffect to setup values
   useEffect(() => {
     if (statusLaunch !== "loading" && statusLaunchWait !== "loading") {
-      setDisabled(false);
-      setGoal("0");
-      setStartAt("");
-      setEndAt("");
-      setIsErrorHandle(false);
-      setErrorHandle({ reason: "" });
+      if (disabled) setDisabled(false);
+      setInput({ goal: "0", startAt: "", endAt: "" });
     }
     // eslint-disable-next-line
   }, [statusLaunch, statusLaunchWait]);
@@ -96,38 +121,41 @@ const LaunchCampaign = ({
           Launch Campaign
         </Typography>
         <TextField
+          error={isErrorInput.goal}
           autoFocus
           size="small"
           margin="dense"
           id="goal"
           helperText="Campaign Goal"
           type="number"
-          value={goal}
-          onChange={(e) => setGoal(e.target.value)}
+          value={input.goal}
+          onChange={handleGoal}
           fullWidth
           variant="standard"
           disabled={disabled}
         />
         <TextField
+          error={isErrorInput.startAt}
           size="small"
           margin="dense"
           id="startAt"
           type="datetime-local"
           helperText="Start At"
-          value={startAt}
-          onChange={(e) => setStartAt(e.target.value)}
+          value={input.startAt}
+          onChange={handleStartAt}
           fullWidth
           variant="standard"
           disabled={disabled}
         />
         <TextField
+          error={isErrorInput.endAt}
           size="small"
           margin="dense"
           id="endAt"
           type="datetime-local"
           helperText="End At"
-          value={endAt}
-          onChange={(e) => setEndAt(e.target.value)}
+          value={input.endAt}
+          onChange={handleEndAt}
           fullWidth
           variant="standard"
           disabled={disabled}
@@ -135,28 +163,17 @@ const LaunchCampaign = ({
         <Button
           variant="contained"
           size="small"
-          disabled={disabled || isLoadingLaunch}
+          disabled={disabled}
           onClick={handleLaunch}
-          endIcon={<GetStatusIcon status={statusLaunch} />}
+          startIcon={<GetStatusIcon status={statusLaunch} />}
+          endIcon={<GetStatusIcon status={statusLaunchWait} />}
         >
           Launch
         </Button>
       </Stack>
-      {isErrorLaunch ||
-        (isErrorHandle && (
-          <>
-            <ShowError
-              message="Launch:"
-              flag={isErrorLaunch}
-              error={errorLaunch}
-            />
-            <ShowError
-              message="Handle:"
-              flag={isErrorHandle}
-              error={errorHandle}
-            />
-          </>
-        ))}
+      {isErrorLaunch && (
+        <ShowError message="Launch:" flag={isErrorLaunch} error={errorLaunch} />
+      )}
     </Paper>
   );
 };
